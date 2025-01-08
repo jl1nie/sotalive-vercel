@@ -11,7 +11,7 @@ const staticDirs = {
 app.use((req, res, next) => {
     const staticPath = staticDirs[req.hostname];
     if (staticPath) {
-        express.static(path.join(__dirname, staticPath))(req, res, next);
+        express.static(staticPath)(req, res, next);
     } else {
         res.status(404).send('Not Found');
     }
