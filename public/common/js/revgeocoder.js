@@ -2,7 +2,7 @@ const endpoint = {
 	'revgeocode': 'https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress',
 	'revyahoo': 'https://www.sotalive.net/api/reverse-geocoder/LonLatToAddressMapCode',
 	'elevation': 'https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php',
-	'muni': 'https://sotaapp2.up.railway.app/api/v2/locator/jcc-jcg/',
+	'muni': 'https://sotaapp2.up.railway.app/api/v2/locator/jcc-jcg',
 };
 
 const cache_rev = new Map();
