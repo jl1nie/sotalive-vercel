@@ -1386,11 +1386,11 @@
 		};
 
 		function kp_index() {
-			fetch(sotalive + "api/geomag")
+			fetch(sotaapp2 + "/propagation/geomag")
 				.then(res => res.json())
 				.then(geomag => {
-					kp = geomag.Kp[0];
-					ap = geomag.Ap;
+					kp = geomag.kIndex[0];
+					ap = geomag.aIndex;
 					geomagindex = 'A:' + ap + ' K:' + kp;
 				});
 		}
