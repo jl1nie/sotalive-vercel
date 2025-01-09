@@ -1094,24 +1094,24 @@
 									pos = '<i><br>位置:<a href="' + locURI(lat, lng, z) +
 										'" target="_blank">' + lat + ',' + lng + '</a></i>';
 
-								if (res['JccCode'] != null) {
+								if (res['jccCode'] != null) {
 
-									if (res['WardCode'] != null) {
-										area['century'] = 'JCC ' + res['WardCode'];
-										mesg = 'JCC' + res['JccCode'] + ' 区番号:' + res['WardCode'] + '<br>' +
-											res['Prefecture'] + res['JccText'] + res['Municipality'] + '<br>GL:' + res['Maidenhead'] +
+									if (res['wardCode'] != null) {
+										area['century'] = 'JCC ' + res['wardCode'];
+										mesg = 'JCC' + res['jccCode'] + ' 区番号:' + res['wardCode'] + '<br>' +
+											res['prefecture'] + res['jccText'] + res['municipality'] + '<br>GL:' + res['maidenhead'] +
 											pos + '<br> 標高:' + altitude;
 									}
 									else {
-										area['century'] = 'JCC ' + res['JccCode']
-										mesg = 'JCC' + res['JccCode'] + '<br>' + res['Prefecture'] + res['JccText'] + res['Municipality'] +
-											'<br>GL:' + res['Maidenhead'] + pos + '<br> 標高:' + altitude;
+										area['century'] = 'JCC ' + res['jccCode']
+										mesg = 'JCC' + res['jccCode'] + '<br>' + res['prefecture'] + res['jccText'] + res['municipality'] +
+											'<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + altitude;
 									}
 								}
 								else {
-									area['century'] = 'JCG ' + res['JcgCode'] + res['HamlogCode'];
-									mesg = 'JCG' + res['JcgCode'] + res['HamlogCode'] + '<br>' + res['Prefecture'] + res['JcgText'] +
-										res['Municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + altitude;
+									area['century'] = 'JCG ' + res['jcgCode'] + res['hamlogCode'];
+									mesg = 'JCG' + res['jcgCode'] + res['hamlogCode'] + '<br>' + res['prefecture'] + res['jcgText'] +
+										res['municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + altitude;
 								}
 							}
 							/*
@@ -1519,9 +1519,9 @@
 					for (const s of res['pota']) {
 
 						var pname = selectRef({
-							'pota': s['Pota'],
-							'jaff': s['Wwff'],
-							'name': s['NameJ']
+							'pota': s['pota'],
+							'jaff': s['wwff'],
+							'name': s['nameJ']
 						}, false);
 						if (pname != '')
 							show_summit_marker.push(

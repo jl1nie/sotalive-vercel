@@ -244,14 +244,14 @@
                 else
                     pos = '<i><br>位置:<a href="' + gsiuri + latlng.lat + '/' + latlng.lng + '" target="_blank">' + lat + ',' + lng + '</a></i>';
 
-                if (res['JccCode'] != null) {
-                    if (res['WardCode'] != null)
-                        mesg = 'JCC' + res['JccCode'] + ' 区番号:' + res['WardCode'] + '<br>' + res['Prefecture'] + res['JccText'] + res['Municipality'] + '<br>GL:' + res['Maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
+                if (res['jccCode'] != null) {
+                    if (res['wardCode'] != null)
+                        mesg = 'JCC' + res['jccCode'] + ' 区番号:' + res['wardCode'] + '<br>' + res['prefecture'] + res['jccText'] + res['municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
                     else
-                        mesg = 'JCC' + res['JccCode'] + '<br>' + res['Prefecture'] + res['JccText'] + res['Municipality'] + '<br>GL:' + res['Maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
+                        mesg = 'JCC' + res['jccCode'] + '<br>' + res['prefecture'] + res['jccText'] + res['municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
                 }
                 else
-                    mesg = 'JCG' + res['JcgCode'] + res['HamlogCode'] + '<br>' + res['Prefecture'] + res['JcgText'] + res['Municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
+                    mesg = 'JCG' + res['jcgCode'] + res['hamlogCode'] + '<br>' + res['prefecture'] + res['jcgText'] + res['municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + res['elevation'] + 'm';
             }
 
             if (isMarker) {
