@@ -601,6 +601,8 @@
 		});
 
 		var sotalive = 'https://www.sotalive.net/';
+		var sotaapp2 = 'https://sotaapp2.up.railway.app/api/v2'
+
 		if (use_yahoo_revgeocode) {
 			gsi_attribution = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>|<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A10-v4_1.html' target='_blank'>国土数値情報自然公園地域データ</a>|<a href='https://developer.yahoo.co.jp/sitemap/'>Web Services by Yahoo! JAPAN</a>"
 		} else {
@@ -1468,30 +1470,41 @@
 
 			if (enable_experimental && prefs['pilgrim'])
 				programs += 'PILGRIM';
-
+			/*
+						if (prefs['show_potalog']) {
+							uuid = getLogID();
+							query = '&programs=' + programs + '&lat=' + nw[0] +
+								'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
+								'&elevation=' + elev + '&parkarea=' + level + '&logid=' + uuid;
+						} else
+							query = '&programs=' + programs + '&lat=' + nw[0] +
+								'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
+								'&elevation=' + elev + '&parkarea=' + level;
+			*/
 			if (prefs['show_potalog']) {
 				uuid = getLogID();
-				query = '&programs=' + programs + '&lat=' + nw[0] +
-					'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
-					'&elevation=' + elev + '&parkarea=' + level + '&logid=' + uuid;
+				query = 'min_lat=' + nw[0] + '&min_lon=' + nw[1]
+					+ '&max_lat=' + se[0] + '&max_lon=' + se[1] +
+					'&min_elev' + elev + '&min_area=' + level + '&user_id=' + uuid;
 			} else
-				query = '&programs=' + programs + '&lat=' + nw[0] +
-					'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
-					'&elevation=' + elev + '&parkarea=' + level;
+				query = 'min_lat=' + nw[0] + '&min_lon=' + nw[1]
+					+ '&max_lat=' + se[0] + '&max_lon=' + se[1] +
+					'&min_elev' + elev + '&min_area=' + level;
 
-
-			fetch(sotalive + 'api/myact/search?' + query)
+			fetch(sotaapp2 + '/search?' + query)
 				.then(res => res.json())
 				.then(res => {
+					/*
 					if (res['errors'] != 'OK') {
 						return;
 					}
+					*/
 					if (z > 11)
 						wz = 11
 					else
 						wz = z;
 					if (prefs['sota_ref'])
-						for (const s of res['summits']) {
+						for (const s of res['sota']) {
 							popup = false
 							if (_popupMarker &&
 								s['lat'] == _popupMarker[0] &&
@@ -1500,15 +1513,15 @@
 								_popupMarker = null
 							}
 							show_summit_marker.push(
-								placeSummitMarker([s['lat'], s['lon']], z, s['elev'], s['actcnt'], popup))
+								placeSummitMarker([s['lat'], s['lon']], z, s['alt'], s['count'], popup))
 
 						}
-					for (const s of res['parks']) {
+					for (const s of res['pota']) {
 
 						var pname = selectRef({
-							'pota': s['pota'],
-							'jaff': s['jaff'],
-							'name': s['name_k']
+							'pota': s['Pota'],
+							'jaff': s['Wwff'],
+							'name': s['NameJ']
 						}, false);
 						if (pname != '')
 							show_summit_marker.push(
