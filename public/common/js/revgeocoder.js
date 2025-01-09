@@ -50,7 +50,7 @@ async function local_reverse_geocoder_gsi(lat, lng, elev) {
 	let res2 = await fetch(muni_uri);
 	let result = await res2.json()
 
-	if (result.MuniCode) {
+	if (result.muniCode) {
 		result['municipality'] = res['results']['lv01Nm'];
 		result.errors = 'OK';
 		if (elev) {
