@@ -20,7 +20,6 @@ async function local_reverse_geocoder(lat, lng, elev) {
 
 async function local_reverse_geocoder_gsi(lat, lng, elev) {
 	let pos = '?lat=' + String(lat) + '&lon=' + String(lng);
-	let posuri = String(lng) + '/' + String(lat);
 
 	if (cache_rev.has(pos)) {
 		return cache_rev.get(pos);
@@ -42,7 +41,7 @@ async function local_reverse_geocoder_gsi(lat, lng, elev) {
 	res = await res.json();
 
 	let muni_uri =
-		endpoint['muni'] + posuri;
+		endpoint['muni'] + pos;
 
 	if ('results' in res)
 		muni_uri += '/' + res['results']['muniCd'];
