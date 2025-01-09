@@ -44,7 +44,7 @@ async function local_reverse_geocoder_gsi(lat, lng, elev) {
 		endpoint['muni'] + pos;
 
 	if ('results' in res)
-		muni_uri += '/' + res['results']['muniCd'];
+		muni_uri += '&muni_code=' + res['results']['muniCd'];
 	//muni_uri += '&addr=' + res['results']['lv01Nm'];
 
 	let res2 = await fetch(muni_uri);
