@@ -1013,63 +1013,63 @@
 				Cookies.set('my_qth_lng', lng)
 			}
 
-			var query = '&programs=SOTAPOTA' + '&lat=' + latlng.lat + '&lon=' + latlng.lng + "&srange=200";
+			var query = 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
 
 			if (area['pota']) {
 				area['pota'] = replacePOTAref(area['pota']);
-				query += "&parkid=" + area['pota'];
+				query += "&pota_code=" + area['pota'];
 			}
-			if (prefs['show_potalog'])
-				query += "&logid=" + getLogID();
 
-			fetch(sotalive + 'api/myact/search?' + query)
+			if (prefs['show_potalog'])
+				query += "&user_id=" + getLogID();
+
+			fetch(sotaapp2 + '/search/full?' + query)
 				.then(res => res.json())
 				.then(res => {
 					var sotamesg = '';
 					var potamesg = '';
 					var qsomesg = '';
-					if (res['errors'] == 'OK') {
 
-						if (res['parks'].length > 0) {
-							p = res['parks'][0];
-							if (!('pota' in area))
-								area['pota'] = p['pota'];
-							if (!('jaff' in area))
-								area['jaff'] = p['jaff'];
-							if (!('name' in area))
-								area['name'] = p['name_k'];
-							if (prefs['show_potalog']) {
-								if (p['attempt'] > 0) {
-									qsomesg = "<br>Activate/Attempt: " + p['activate'] + "/" + p['attempt']
-									qsomesg += "<br>QSOs: " + p['QSOs'] + "<br>";
-								} else if (p['QSOs'] > 0)
-									qsomesg = "<br>QSOs: " + p['QSOs'] + "<br>";
-							}
+					if (res['sota'].length > 0) {
+						s = res['summits'][0]
+						area['sota_code'] = s['summitCode'];
+						area['sota'] = s['summitCode'] + ' ' + s['summitName'];
+						if (area['name'])
+							area['name'] += ' / ' + s['summitNameJ'];
+						else
+							area['name'] = s['summitNamej'];
+
+						l = { 'lat': s['lat'], 'lng': s['lon'] }
+						displayActivationZone(l, -0.8);
+						pos = '<br>位置:<a href="' + locURI(s['latitude'], s['longitude'], z) +
+							'" target="_blank">' + s['latitude'] + ',' + s['longitude'] + '</a>';
+						sotamesg = escapeStr(s['desc']) + '<br>GL:' + s['maidenhead'] + pos + '<br>標高:' + s['altM'] + 'm,' + s['points'] + 'pts (+' + s['bonusPoints'] + ')';
+						qsomesg += '<br>Activations: ' + s['activationCount']
+						if (s['actcnt'] != 0)
+							qsomesg += '<br>Last Activation: ' + s['activationDate'] + '(' + s['activationCall'] + ')';
+					}
+					if (res['pota'].length > 0) {
+						p = res['pota'][0];
+						if (!('pota' in area))
+							area['pota'] = p['potaCode'];
+						if (!('jaff' in area))
+							area['jaff'] = p['wwffCode'];
+						if (!('name' in area))
+							area['name'] = p['parkNameJ'];
+						if (prefs['show_potalog']) {
+							if (p['attempts'] != null) {
+								qsomesg = "<br>Activations/Attempts: " + p['activations'] + "/" + p['attempts']
+								qsomesg += "<br>QSOs: " + p['qsos'] + "<br>";
+							} else if (p['qsos'] != null)
+								qsomesg = "<br>QSOs: " + p['qsos'] + "<br>";
 						}
+					}
 
 
-						if (res['summits'].length > 0) {
-							s = res['summits'][0]
-							area['sota_code'] = s['code'];
-							area['sota'] = s['code'] + ' ' + s['name'];
-							if (area['name'])
-								area['name'] += ' / ' + s['name_k'];
-							else
-								area['name'] = s['name_k'];
 
-							l = { 'lat': s['lat'], 'lng': s['lon'] }
-							displayActivationZone(l, -0.8);
-							pos = '<br>位置:<a href="' + locURI(s['lat'], s['lon'], z) +
-								'" target="_blank">' + s['lat'] + ',' + s['lon'] + '</a>';
-							sotamesg = escapeStr(s['desc']) + '<br>GL:' + s['maidenhead'] + pos + '<br>標高:' + s['elev'] + 'm,' + s['pts'] + 'pts (+' + s['bonus'] + ')';
-							qsomesg += '<br>Activations: ' + s['actcnt']
-							if (s['actcnt'] != 0)
-								qsomesg += '<br>Last Activation: ' + s['lastact'] + '(' + s['lastcall'] + ')';
-						}
-					};
+
 					local_reverse_geocoder(latlng.lat, latlng.lng, true)
 						.then(res => {
-
 							if ('elevation' in res) {
 								if ('alt' in latlng) {
 									altitude = res['elevation'] + 'm (GPS測位値:' + latlng.alt + 'm)';
@@ -1114,12 +1114,11 @@
 										res['municipality'] + '<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + altitude;
 								}
 							}
-							/*
-											if (prefs['display_mapcode'] && res['mapcode'])
-												mapcode = '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + res['mapcode'];
-											else
-							*/
-							mapcode = '';
+
+							if (prefs['display_mapcode'])
+								mapcode = '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + mapcode(latlng.lat, latlng.lng);
+							else
+								mapcode = '';
 
 							weather = '&nbsp&nbsp<a href="' + windyuri +
 								'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>' +

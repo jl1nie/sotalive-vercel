@@ -3,12 +3,32 @@ const endpoint = {
 	'revyahoo': 'https://www.sotalive.net/api/reverse-geocoder/LonLatToAddressMapCode',
 	'elevation': 'https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php',
 	'muni': 'https://sotaapp2.up.railway.app/api/v2/locator/jcc-jcg',
+	'mapcode': 'https://japanmapcode.com/mapcode'
 };
 
 const cache_rev = new Map();
 
 var use_yahoo_revgeocode = false;
 var enable_gsi_elevation = true;
+
+async function mapcode(lat, lng) {
+	const data = { lng: lng, lat: lat };
+	const url = endpoint['mapcode'];
+	try {
+		const response = await fetch(url,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+		if (!response.ok) { throw new Error('Network response was not ok'); }
+		const result = await response.text();
+		return result;
+	} catch (error) {
+		console.error('Error:', error);
+		return null;
+	}
+}
 
 async function local_reverse_geocoder(lat, lng, elev) {
 	if (use_yahoo_revgeocode)
