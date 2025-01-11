@@ -23,7 +23,7 @@ async function mapcode(lat, lng) {
 			});
 		if (!response.ok) { throw new Error('Network response was not ok'); }
 		const result = await response.text();
-		return result;
+		return result.mapcode;
 	} catch (error) {
 		console.error('Error:', error);
 		return null;
