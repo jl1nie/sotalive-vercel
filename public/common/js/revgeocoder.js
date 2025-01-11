@@ -11,7 +11,7 @@ const cache_rev = new Map();
 var use_yahoo_revgeocode = false;
 var enable_gsi_elevation = true;
 
-async function mapcode(lat, lng) {
+async function get_mapcode(lat, lng) {
 	const data = { lng: lng, lat: lat };
 	const url = endpoint['mapcode'];
 	try {
@@ -22,7 +22,7 @@ async function mapcode(lat, lng) {
 				body: JSON.stringify(data)
 			});
 		if (!response.ok) { throw new Error('Network response was not ok'); }
-		const result = await response.text();
+		const result = await response.json();
 		return result.mapcode;
 	} catch (error) {
 		console.error('Error:', error);
