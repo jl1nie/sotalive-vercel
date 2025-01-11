@@ -1020,11 +1020,11 @@
 			if (area['pota']) {
 				area['pota'] = replacePOTAref(area['pota']);
 				url += '/pota/parks/search';
-				query = "pota_code=" + area['pota'];
+				query += "pota_code=" + area['pota'];
 				mode = 'POTA';
 			} else {
 				url += '/sota/summits/search';
-				query = 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
+				query += 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
 				mode = 'SOTA';
 			}
 
