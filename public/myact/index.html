@@ -1031,7 +1031,7 @@
 					var qsomesg = '';
 
 					if (res['sota'].length > 0) {
-						s = res['summits'][0]
+						s = res['sota'][0]
 						area['sota_code'] = s['summitCode'];
 						area['sota'] = s['summitCode'] + ' ' + s['summitName'];
 						if (area['name'])
@@ -1064,9 +1064,6 @@
 								qsomesg = "<br>QSOs: " + p['qsos'] + "<br>";
 						}
 					}
-
-
-
 
 					local_reverse_geocoder(latlng.lat, latlng.lng, true)
 						.then(res => {
