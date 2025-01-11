@@ -1013,25 +1013,34 @@
 				Cookies.set('my_qth_lng', lng)
 			}
 
-			var query = 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
+			var url = sotaapp2;
+			var query = '?';
+			var mode = ''
 
 			if (area['pota']) {
 				area['pota'] = replacePOTAref(area['pota']);
-				query += "&pota_code=" + area['pota'];
+				url += '/pota/parks/search';
+				query = "pota_code=" + area['pota'];
+				mode = 'POTA';
+			} else {
+				url += '/sota/summits/search';
+				query = 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
+				mode = 'SOTA';
 			}
 
+			/*
 			if (prefs['show_potalog'])
 				query += "&user_id=" + getLogID();
-
-			fetch(sotaapp2 + '/search/full?' + query)
+			*/
+			fetch(url + query)
 				.then(res => res.json())
 				.then(res => {
 					var sotamesg = '';
 					var potamesg = '';
 					var qsomesg = '';
 
-					if (res['sota'].length > 0) {
-						s = res['sota'][0]
+					if (mode == 'SOTA') {
+						s = res[0]
 						area['sota_code'] = s['summitCode'];
 						area['sota'] = s['summitCode'] + ' ' + s['summitName'];
 						if (area['name'])
@@ -1047,9 +1056,8 @@
 						qsomesg += '<br>Activations: ' + s['activationCount']
 						if (s['activationCount'] != 0)
 							qsomesg += '<br>Last Activation: ' + s['activationDate'] + '(' + s['activationCall'] + ')';
-					}
-					if (res['pota'].length > 0) {
-						p = res['pota'][0];
+					} else {
+						p = res[0];
 						if (!('pota' in area))
 							area['pota'] = p['potaCode'];
 						if (!('jaff' in area))
