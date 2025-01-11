@@ -1112,42 +1112,49 @@
 								}
 							}
 
-							if (prefs['display_mapcode'])
-								mapcode = '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + get_mapcode(latlng.lat, latlng.lng);
-							else
-								mapcode = '';
+							function cont(mapcode) {
+								weather = '&nbsp&nbsp<a href="' + windyuri +
+									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>' +
+									mapcode;
 
-							weather = '&nbsp&nbsp<a href="' + windyuri +
-								'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>' +
-								mapcode;
+								if ('areacode' in res && res['areacode'])
+									area['areacode'] = res['areacode'][0];
 
-							if ('areacode' in res && res['areacode'])
-								area['areacode'] = res['areacode'][0];
-
-							if (sotamesg) {
-								if (isGPS)
-									mesg = sotamesg + '<br><b>現在地: </b>' + mesg;
+								if (sotamesg) {
+									if (isGPS)
+										mesg = sotamesg + '<br><b>現在地: </b>' + mesg;
+									else
+										mesg = sotamesg + '<br><b>クリック位置: </b>' + mesg;
+								}
+								cnt = selectRef(area, true);
+								if (cnt != '') {
+									cnt = '<b>' + cnt + '</b>' + mesg + weather + qsomesg;
+									if (prefs["enable_emulation"])
+										cnt += keyerButton(area);
+								}
 								else
-									mesg = sotamesg + '<br><b>クリック位置: </b>' + mesg;
+									cnt = mesg + weather;
+
+								popup.setLatLng(latlng)
+									.setContent(cnt)
+									.openOn(map);
+
+								if (isMarker && qth_marker != null)
+									qth_marker.bindPopup(cnt).openPopup();
+
+								last_area = area;
+								last_mesg = mesg;
 							}
-							cnt = selectRef(area, true);
-							if (cnt != '') {
-								cnt = '<b>' + cnt + '</b>' + mesg + weather + qsomesg;
-								if (prefs["enable_emulation"])
-									cnt += keyerButton(area);
+
+							if (prefs['display_mapcode']) {
+								get_mapcode(latlng.lat, latlng.lng)
+									.then(code => {
+										mapcode = '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + code;
+										cont(mapcode)
+									})
 							}
 							else
-								cnt = mesg + weather;
-
-							popup.setLatLng(latlng)
-								.setContent(cnt)
-								.openOn(map);
-
-							if (isMarker && qth_marker != null)
-								qth_marker.bindPopup(cnt).openPopup();
-
-							last_area = area;
-							last_mesg = mesg;
+								cont('')
 						});
 				});
 		}
