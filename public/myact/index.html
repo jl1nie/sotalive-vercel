@@ -1038,41 +1038,41 @@
 					var sotamesg = '';
 					var potamesg = '';
 					var qsomesg = '';
+					if (res.length > 0) {
+						if (mode == 'SOTA') {
+							s = res[0]
+							area['sota_code'] = s['summitCode'];
+							area['sota'] = s['summitCode'] + ' ' + s['summitName'];
+							if (area['name'])
+								area['name'] += ' / ' + s['summitNameJ'];
+							else
+								area['name'] = s['summitNameJ'];
 
-					if (mode == 'SOTA') {
-						s = res[0]
-						area['sota_code'] = s['summitCode'];
-						area['sota'] = s['summitCode'] + ' ' + s['summitName'];
-						if (area['name'])
-							area['name'] += ' / ' + s['summitNameJ'];
-						else
-							area['name'] = s['summitNameJ'];
-
-						l = { 'lat': s['lat'], 'lng': s['lon'] }
-						displayActivationZone(l, -0.8);
-						pos = '<br>位置:<a href="' + locURI(s['latitude'], s['longitude'], z) +
-							'" target="_blank">' + s['latitude'] + ',' + s['longitude'] + '</a>';
-						sotamesg = escapeStr(s['cityJ']) + '<br>GL:' + s['maidenhead'] + pos + '<br>標高:' + s['altM'] + 'm,' + s['points'] + 'pts (+' + s['bonusPoints'] + ')';
-						qsomesg += '<br>Activations: ' + s['activationCount']
-						if (s['activationCount'] != 0)
-							qsomesg += '<br>Last Activation: ' + s['activationDate'] + '(' + s['activationCall'] + ')';
-					} else {
-						p = res[0];
-						if (!('pota' in area))
-							area['pota'] = p['potaCode'];
-						if (!('jaff' in area))
-							area['jaff'] = p['wwffCode'];
-						if (!('name' in area))
-							area['name'] = p['parkNameJ'];
-						if (prefs['show_potalog']) {
-							if (p['attempts'] != null) {
-								qsomesg = "<br>Activations/Attempts: " + p['activations'] + "/" + p['attempts']
-								qsomesg += "<br>QSOs: " + p['qsos'] + "<br>";
-							} else if (p['qsos'] != null)
-								qsomesg = "<br>QSOs: " + p['qsos'] + "<br>";
+							l = { 'lat': s['lat'], 'lng': s['lon'] }
+							displayActivationZone(l, -0.8);
+							pos = '<br>位置:<a href="' + locURI(s['latitude'], s['longitude'], z) +
+								'" target="_blank">' + s['latitude'] + ',' + s['longitude'] + '</a>';
+							sotamesg = escapeStr(s['cityJ']) + '<br>GL:' + s['maidenhead'] + pos + '<br>標高:' + s['altM'] + 'm,' + s['points'] + 'pts (+' + s['bonusPoints'] + ')';
+							qsomesg += '<br>Activations: ' + s['activationCount']
+							if (s['activationCount'] != 0)
+								qsomesg += '<br>Last Activation: ' + s['activationDate'] + '(' + s['activationCall'] + ')';
+						} else {
+							p = res[0];
+							if (!('pota' in area))
+								area['pota'] = p['potaCode'];
+							if (!('jaff' in area))
+								area['jaff'] = p['wwffCode'];
+							if (!('name' in area))
+								area['name'] = p['parkNameJ'];
+							if (prefs['show_potalog']) {
+								if (p['attempts'] != null) {
+									qsomesg = "<br>Activations/Attempts: " + p['activations'] + "/" + p['attempts']
+									qsomesg += "<br>QSOs: " + p['qsos'] + "<br>";
+								} else if (p['qsos'] != null)
+									qsomesg = "<br>QSOs: " + p['qsos'] + "<br>";
+							}
 						}
 					}
-
 					local_reverse_geocoder(latlng.lat, latlng.lng, true)
 						.then(res => {
 							if ('elevation' in res) {
