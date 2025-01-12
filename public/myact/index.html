@@ -1494,12 +1494,12 @@
 			*/
 			if (prefs['show_potalog']) {
 				uuid = getLogID();
-				query = 'min_lat=' + nw[0] + '&min_lon=' + nw[1]
-					+ '&max_lat=' + se[0] + '&max_lon=' + se[1] +
+				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
+					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
 					'&min_elev=' + elev + '&min_area=' + level /*+ '&user_id=' + uuid*/;
 			} else
-				query = 'min_lat=' + nw[0] + '&min_lon=' + nw[1]
-					+ '&max_lat=' + se[0] + '&max_lon=' + se[1] +
+				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
+					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
 					'&min_elev=' + elev + '&min_area=' + level;
 
 			fetch(sotaapp2 + '/search?' + query)
