@@ -1813,15 +1813,15 @@
 		var chart = null;
 		var chart2 = null;
 		var prevloc = null;
-		var target_prog = ['pota', 'sota'];
+		var target_prog = ['POTA', 'SOTA'];
 
 		function locate_ref(loc) {
 			if (loc != prevloc) {
-				let url = 'https://www.sotalive.net/api/sota-jaff-pota?refid=' + loc;
+				let url = sotaapp2 + "/search/brief?name=" + loc;
 				fetch(url)
 					.then(res => res.json())
 					.then(data => {
-						let r = data['reference'][0];
+						let r = data['candidates'][0];
 						showReference({
 							coord: [r['lat'], r['lon']],
 							name: r['name'],
@@ -1843,15 +1843,15 @@
 
 			if (prog == 0) {
 				drop.textContent = 'SOTA/POTA';
-				target_prog = ['pota', 'sota'];
+				target_prog = ['POTA', 'SOTA'];
 
 			} else if (prog == 1) {
 				drop.textContent = 'SOTA';
-				target_prog = ['sota'];
+				target_prog = ['SOTA'];
 
 			} else if (prog == 2) {
 				drop.textContent = 'POTA';
-				target_prog = ['pota'];
+				target_prog = ['POTA'];
 			}
 			if (prev_prog != target_prog) {
 				refresh_spots();
@@ -2052,70 +2052,60 @@
 		}
 
 		async function refresh_spots() {
-			let api = sotalive + 'api/myact/potalog?command=SPOTS&region=JA%2CJP';
-			if (prefs['pota_hunter_uuid'] != null) {
-				api += '&logid=' + prefs['pota_hunter_uuid'];
-			}
+			const pat = encodeURIComponent("^(JA|JP-)");
+			const api = sotaapp2 + '/spots?pat_ref=' + pat;
+			//if (prefs['pota_hunter_uuid'] != null) {
+			//	api += '&logid=' + prefs['pota_hunter_uuid'];
+			//}
 			if (prefs['by_call']) {
-				api += '&bycall=1';
+				api += '&by_call=null';
 			}
-			api += '&period=' + String(prefs['spot_period']);
+			api += '&hours_ago=' + String(prefs['spot_period']);
 
 			let res = await fetch(api);
 			res = await res.json();
-			let sdata = res['spots'];
-			let logs = res['logs'];
+			let sdata = res;
+			//let logs = res['logs'];
 			let datasets = [];
 			let radius = 0;
 			let rc = 0;
 
 			for (let prog of target_prog) {
-				let data = sdata[prog]
-
-				if (data == null)
-					continue;
-
-				let refs = Object.keys(data);
-				let rspots = Object.values(data);
-
-				for (var i = 0; i < refs.length; i++) {
-					let ref = refs[i];
-					let spots = rspots[i];
+				for (var i = 0; i < sdata.length; i++) {
+					let ref = sdata[i]['key'];
+					let spots = sdata[i]['values'];
 					let sp = [];
+					if (spots[0]['promgram'] == prog) {
+						for (const p of spots) {
+							sp.push(
+								{
+									x: new Date(p['spotTime']),
+									y: rc,
+									z: ref + " " + p['activator'] + " " + p['frequency'] + " " + p['mode'] + " " + p['comment'],
+									ref: r,
+								})
+						}
 
-					for (const p of spots) {
-						if (prefs['by_call'])
-							r = p[1];
-						else
-							r = ref;
-						sp.push(
-							{
-								x: new Date(p[0]),
-								y: rc,
-								z: ref + " " + p[1] + " " + p[2] + " " + p[3] + " " + p[4],
-								ref: r,
-							})
-					}
-
-					if (prefs['by_call'] || prog == 'sota' ||
+						if (prefs['by_call'] || prog == 'SOTA' /*||
 						!prefs['show_potalog'] ||
-						(ref in logs && logs[ref].length == 1)) {
-						d = {
-							label: ref,
-							pointRadius: 5,
-							data: sp
-						};
+						(ref in logs && logs[ref].length == 1)*/) {
+							d = {
+								label: ref,
+								pointRadius: 5,
+								data: sp
+							};
+						}
+						else {
+							d = {
+								label: ref,
+								pointRadius: 8,
+								pointBoderWidth: 4,
+								data: sp
+							};
+						}
+						datasets.push(d)
+						rc += 1;
 					}
-					else {
-						d = {
-							label: ref,
-							pointRadius: 8,
-							pointBoderWidth: 4,
-							data: sp
-						};
-					}
-					datasets.push(d)
-					rc += 1;
 				}
 			}
 			let ctx = document.getElementById('myChart').getContext('2d');
