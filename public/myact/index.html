@@ -2059,6 +2059,8 @@
 			//}
 			if (prefs['by_call']) {
 				api += '&by_call=null';
+			} else {
+				api += '&by_ref=null';
 			}
 			api += '&hours_ago=' + String(prefs['spot_period']);
 
@@ -2081,7 +2083,7 @@
 								{
 									x: new Date(p['spotTime']),
 									y: rc,
-									z: ref + " " + p['activator'] + " " + p['frequency'] + " " + p['mode'] + " " + p['comment'],
+									z: p['activator'] + " " + p['reference'] + " " + p['frequency'] + " " + p['mode'] + " " + p['comment'],
 									ref: ref,
 								})
 						}
