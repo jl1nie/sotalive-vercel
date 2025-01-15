@@ -1833,7 +1833,7 @@
 		}
 
 		function label_callback(item, data) {
-			locate_ref(item.raw['ref']);
+			locate_ref(item.raw['code']);
 			return item.raw['z'];
 		}
 
@@ -2085,6 +2085,7 @@
 									y: rc,
 									z: p['activator'] + " " + p['reference'] + " " + p['frequency'] + " " + p['mode'] + " " + p['comment'],
 									ref: ref,
+									code: p['reference']
 								})
 						}
 
