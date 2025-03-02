@@ -363,11 +363,7 @@
 									onclick="clickPrefs()">
 								<label class="custom-control-label" for="show_potalog"> POTAログを表示</label>
 							</div>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" value="" id="enable_mqtt"
-									onclick="clickPrefs(); potaLog('check');">
-								<label class="custom-control-label" for="enable_mqtt"> MQTT連携</label>
-							</div>
+						
 							<div class="custom-file">
 								<input type="file" accept=".csv" style="width:10em" class="custom-file-input"
 									id="file_input" name="filename" required>
@@ -553,7 +549,6 @@
 			'spot_period': 6,
 			'pota_hunter_uuid': null,
 			'pota_activator_uuid': null,
-			'enable_mqtt': false,
 			'enable_emulation': false,
 			'pemu_call': '',
 			'pemu_areacode': '',
