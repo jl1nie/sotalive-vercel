@@ -1,11 +1,13 @@
 const express = require('express');
 const path = require('path');
 const app = express();
+module.exports = app;
 
 const staticDirs = {
     'myqth.vercel.app': 'public/myqth',
     'myact.vercel.app': 'public/myact',
     'logconv.vercel.app': 'public/logconv',
+    'localhost': 'public/myact',
 };
 
 app.use((req, res, next) => {

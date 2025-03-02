@@ -575,6 +575,38 @@
 			'enable_serial': true,
 		};
 
+		var sotaapp2 = 'https://sotaapp2.fly.dev/api/v2'
+		var show_summit_marker = [];
+
+		async function fetchAPI(endpoint, method, data) {
+			const encodedEndpoint = endpoint.split('/').map(part => encodeURIComponent(part)).join('/');
+			const url = sotaapp2 + encodedEndpoint;
+    		const options = {
+        		method: method,
+        		//headers: {
+            	//'Content-Type': 'application/json'
+        		//},
+        		body: method === 'POST' || method === 'PUT' ? data : undefined
+    		};
+
+    		try {
+        		const response = await fetch(url, options);
+        		if (!response.ok) {
+            		throw new Error(`Error ${response.status}: ${response.statusText}`);
+        		}
+
+				if (method === 'DELETE') {
+					return {}
+				}
+				let res = await response.json();
+				console.log(res);
+        		return res;
+    		} catch (error) {
+        		console.error(`API ${endpoint} request failed:`, error);
+        		return null;
+    		}
+		}
+
 		var enable_experimental = false;
 
 		if (location.host != 'mypilgrim.sotalive.net') {
@@ -599,9 +631,6 @@
 			let vh = window.innerHeight * 0.01;
 			document.documentElement.style.setProperty('--vh', `${vh}px`);
 		});
-
-		var sotalive = 'https://www.sotalive.net/';
-		var sotaapp2 = 'https://sotaapp2.fly.dev/api/v2'
 
 		if (use_yahoo_revgeocode) {
 			gsi_attribution = "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>|<a href='https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A10-v4_1.html' target='_blank'>国土数値情報自然公園地域データ</a>|<a href='https://developer.yahoo.co.jp/sitemap/'>Web Services by Yahoo! JAPAN</a>"
@@ -687,36 +716,35 @@
 		async function potaLog(command) {
 			let keys = ['pota_activator_uuid', 'pota_hunter_uuid'];
 			let res = null;
-			let api = sotalive + 'api/myact/potalog?';
-
+			let api = '/pota';
 			switch (command) {
 				case 'check':
 					for (var k of keys) {
 						var el, mesg;
-						if (k == 'pota_hunter_uuid' && prefs['enable_mqtt'])
-							res = await fetch(api + 'command=CHECK' +
-								'&logid=' + prefs[k] +
-								'&mqtt=1');
-						else
-							res = await fetch(api + 'command=CHECK' +
-								'&logid=' + prefs[k]);
-						res = await res.json();
-						if (res['errors'] == 'OK') {
-							prefs[k] = res['uuid'];
+						
+						if (prefs[k] == "null") {
+							el = document.getElementById(k);
+							el.innerText = '----';
+							continue;
+						}
+
+						res = await fetchAPI(api + `/log/${prefs[k]}`, 'GET');
+
+						if (res) {
+							prefs[k] = res['logId'];
 							el = document.getElementById(k);
 							if (k.includes('hunter')) {
 								mesg = '(Hunter)';
 							} else {
 								mesg = '(Activator)';
 							}
-							el.innerText = res['create'] + mesg;
+							el.innerText = res['lastUpdate'] + mesg;
 						} else {
 							prefs[k] = null;
 							el = document.getElementById(k);
 							el.innerText = '----';
 						}
 					}
-					closePrefs();
 					break;
 
 				case 'del-act':
@@ -727,12 +755,11 @@
 
 					if (prefs[keys[k]] == null)
 						break;
-
-					res = await fetch(api + 'command=DELETE' +
-						'&logid=' + prefs[keys[k]]);
-					res = await res.json();
-					if (res['errors'] == 'OK') {
-						prefs[keys[k]] = null
+					
+					res = await fetchAPI(api + `/log/${prefs[keys[k]]}`, 'GET');
+					
+					if (res) {
+						prefs[keys[k]] = "null"
 						el = document.getElementById(keys[k]);
 						el.innerText = '----';
 						if (k == 0)
@@ -740,25 +767,33 @@
 						else
 							potaLog('show-act');
 					}
+					
 					potaLog('check');
+					
 					break;
 
 				case 'show-act':
 					prefs['show_potalog'] = true;
 					prefs['show_potaactlog'] = true;
+					
 					el = document.getElementById('show_potaactlog');
 					el.checked = true;
+					
 					el = document.getElementById('show_potalog');
 					el.checked = true;
+					
 					break;
 
 				case 'show-hunt':
 					prefs['show_potalog'] = true;
 					prefs['show_potaactlog'] = false;
+					
 					el = document.getElementById('show_potaactlog2');
 					el.checked = true;
+					
 					el = document.getElementById('show_potalog');
 					el.checked = true;
+					
 					break;
 
 				case 'upload':
@@ -771,21 +806,16 @@
 
 					const fd = new FormData();
 					fd.append('uploadfile', file_input.files[0]);
-					res = await fetch(api + 'command=UPLOAD' +
-						'&logid_act=' + prefs[keys[0]] +
-						'&logid_hunt=' + prefs[keys[1]], {
-						method: 'POST',
-						body: fd
-					});
-					res = await res.json();
 
-					if (res['errors'] == 'OK') {
-						if (res['logtype'] == 'ACT') {
-							prefs[keys[0]] = res['uuid'];
+					res = await fetchAPI(api + `/log/${prefs[keys[0]]}/${prefs[keys[1]]}`, 'POST', fd);
+					
+					if (res) {
+						if (res['logKind'] == 'activator') {
+							prefs[keys[0]] = res['logId'];
 							potaLog('show-act');
 						}
 						else {
-							prefs[keys[1]] = res['uuid'];
+							prefs[keys[1]] = res['logId'];
 							potaLog('show-hunt');
 						}
 						potaLog('check');
@@ -798,14 +828,11 @@
 					break;
 
 				case 'export':
-					res = await fetch(api + 'command=EXPORT' +
-						'&logid_act=' + prefs[keys[0]] +
-						'&logid_hunt=' + prefs[keys[1]]);
-					res = await res.json();
-
-					if (res['errors'] == 'OK') {
+					res = await fetchAPI(api + `/log-share/${prefs[keys[0]]}/${prefs[keys[1]]}`, 'GET');
+					
+					if (res) {
 						el = document.getElementById('pota_export_key');
-						el.innerHTML = '<b>' + res['sharekey'] + '</b>';
+						el.innerHTML = '<b>' + res['share_id'] + '</b>';
 					} else {
 						window.alert("Exportに失敗しました")
 					}
@@ -813,19 +840,17 @@
 
 				case 'import':
 					const sharekey = document.getElementById('import_uuid');
-					res = await fetch(api + 'command=IMPORT' +
-						'&sharekey=' + sharekey.value);
-					res = await res.json();
+					res = await fetchAPI(api + `/log-share/${sharekey.value}`, 'GET');
 
-					if (res['errors'] == 'OK') {
-						prefs[keys[0]] = res['uuid_act'];
-						prefs[keys[1]] = res['uuid_hunt'];
+					if (res) {
+						prefs[keys[0]] = res['activator_logid'];
+						prefs[keys[1]] = res['hunter_logid'];
 						potaLog('check');
 
-						if (res['uuid_act'] != "null")
+						if (res['activator_logid'] != "null")
 							potaLog('show-act')
 
-						if (res['uuid_hunt'] != "null")
+						if (res['hunter_logid'] != "null")
 							potaLog('show-hunt')
 
 					} else {
@@ -1028,10 +1053,11 @@
 				mode = 'SOTA';
 			}
 
-			/*
-			if (prefs['show_potalog'])
-				query += "&user_id=" + getLogID();
-			*/
+			let logid = getLogID();
+
+			if (prefs['show_potalog'] && logid != "null")
+				query += "&log_id=" + logid;
+	
 			fetch(url + query)
 				.then(res => res.json())
 				.then(res => {
@@ -1430,7 +1456,7 @@
 			return escstr;
 		}
 
-		var show_summit_marker = [];
+
 
 		function deleteSummitMarker() {
 			while (show_summit_marker.length > 0) {
@@ -1452,7 +1478,7 @@
 		}
 
 		function placeSummitMarkers(nw, se, z) {
-			var popup, elev, prefix, level, query, programs, uuid;
+			var popup, elev, prefix, level, query, programs, logid;
 
 			if (z >= prefs['zoom_threshold']) {
 				elev = 0;
@@ -1481,35 +1507,21 @@
 
 			if (enable_experimental && prefs['pilgrim'])
 				programs += 'PILGRIM';
-			/*
-						if (prefs['show_potalog']) {
-							uuid = getLogID();
-							query = '&programs=' + programs + '&lat=' + nw[0] +
-								'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
-								'&elevation=' + elev + '&parkarea=' + level + '&logid=' + uuid;
-						} else
-							query = '&programs=' + programs + '&lat=' + nw[0] +
-								'&lon=' + nw[1] + '&lat2=' + se[0] + '&lon2=' + se[1] +
-								'&elevation=' + elev + '&parkarea=' + level;
-			*/
-			if (prefs['show_potalog']) {
-				uuid = getLogID();
+		
+			logid = getLogID();
+			if (prefs['show_potalog'] && logid != "null") {
 				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
 					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
-					'&min_elev=' + elev + '&min_area=' + level /*+ '&user_id=' + uuid*/;
+					'&min_elev=' + elev + '&min_area=' + level +'&log_id=' + logid;
 			} else
 				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
 					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
 					'&min_elev=' + elev + '&min_area=' + level;
 
-			fetch(sotaapp2 + '/search?' + query)
+			res =fetch(sotaapp2 + '/search?' + query)
 				.then(res => res.json())
 				.then(res => {
-					/*
-					if (res['errors'] != 'OK') {
-						return;
-					}
-					*/
+
 					if (z > 11)
 						wz = 11
 					else
@@ -2025,7 +2037,7 @@
 		}
 
 		async function refresh_aprs_track() {
-
+/*
 			if (prefs['aprs_track']) {
 				if (aprs_layer) {
 					map.removeLayer(aprs_layer);
@@ -2049,6 +2061,7 @@
 			for (const track of tracks) {
 				drawAPRSTrack(track['properties'], track['geometry']);
 			}
+				*/
 		}
 
 		async function refresh_spots() {
