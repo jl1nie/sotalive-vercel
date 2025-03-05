@@ -363,7 +363,7 @@
 									onclick="clickPrefs()">
 								<label class="custom-control-label" for="show_potalog"> POTAログを表示</label>
 							</div>
-						
+
 							<div class="custom-file">
 								<input type="file" accept=".csv" style="width:10em" class="custom-file-input"
 									id="file_input" name="filename" required>
@@ -576,30 +576,30 @@
 		async function fetchAPI(endpoint, method, data) {
 			const encodedEndpoint = endpoint.split('/').map(part => encodeURIComponent(part)).join('/');
 			const url = sotaapp2 + encodedEndpoint;
-    		const options = {
-        		method: method,
-        		//headers: {
-            	//'Content-Type': 'application/json'
-        		//},
-        		body: method === 'POST' || method === 'PUT' ? data : undefined
-    		};
+			const options = {
+				method: method,
+				//headers: {
+				//'Content-Type': 'application/json'
+				//},
+				body: method === 'POST' || method === 'PUT' ? data : undefined
+			};
 
-    		try {
-        		const response = await fetch(url, options);
-        		if (!response.ok) {
-            		throw new Error(`Error ${response.status}: ${response.statusText}`);
-        		}
+			try {
+				const response = await fetch(url, options);
+				if (!response.ok) {
+					throw new Error(`Error ${response.status}: ${response.statusText}`);
+				}
 
 				if (method === 'DELETE') {
 					return {}
 				}
 				let res = await response.json();
 				console.log(res);
-        		return res;
-    		} catch (error) {
-        		console.error(`API ${endpoint} request failed:`, error);
-        		return null;
-    		}
+				return res;
+			} catch (error) {
+				console.error(`API ${endpoint} request failed:`, error);
+				return null;
+			}
 		}
 
 		var enable_experimental = false;
@@ -716,7 +716,7 @@
 				case 'check':
 					for (var k of keys) {
 						var el, mesg;
-						
+
 						if (prefs[k] == "null") {
 							el = document.getElementById(k);
 							el.innerText = '----';
@@ -740,9 +740,6 @@
 							el.innerText = '----';
 						}
 					}
-					
-					clickPrefs();
-
 					break;
 
 				case 'del-act':
@@ -753,9 +750,9 @@
 
 					if (prefs[keys[k]] == null)
 						break;
-					
-					res = await fetchAPI(api + `/log/${prefs[keys[k]]}`, 'GET');
-					
+
+					res = await fetchAPI(api + `/log/${prefs[keys[k]]}`, 'DELETE');
+
 					if (res) {
 						prefs[keys[k]] = "null"
 						el = document.getElementById(keys[k]);
@@ -765,33 +762,33 @@
 						else
 							potaLog('show-act');
 					}
-					
+
 					potaLog('check');
-					
+
 					break;
 
 				case 'show-act':
 					prefs['show_potalog'] = true;
 					prefs['show_potaactlog'] = true;
-					
+
 					el = document.getElementById('show_potaactlog');
 					el.checked = true;
-					
+
 					el = document.getElementById('show_potalog');
 					el.checked = true;
-					
+
 					break;
 
 				case 'show-hunt':
 					prefs['show_potalog'] = true;
 					prefs['show_potaactlog'] = false;
-					
+
 					el = document.getElementById('show_potaactlog2');
 					el.checked = true;
-					
+
 					el = document.getElementById('show_potalog');
 					el.checked = true;
-					
+
 					break;
 
 				case 'upload':
@@ -806,7 +803,7 @@
 					fd.append('uploadfile', file_input.files[0]);
 
 					res = await fetchAPI(api + `/log/${prefs[keys[0]]}/${prefs[keys[1]]}`, 'POST', fd);
-					
+
 					if (res) {
 						if (res['logKind'] == 'activator') {
 							prefs[keys[0]] = res['logId'];
@@ -827,7 +824,7 @@
 
 				case 'export':
 					res = await fetchAPI(api + `/log-share/${prefs[keys[0]]}/${prefs[keys[1]]}`, 'GET');
-					
+
 					if (res) {
 						el = document.getElementById('pota_export_key');
 						el.innerHTML = '<b>' + res['share_id'] + '</b>';
@@ -1055,7 +1052,7 @@
 
 			if (prefs['show_potalog'] && logid != "null")
 				query += "&log_id=" + logid;
-	
+
 			fetch(url + query)
 				.then(res => res.json())
 				.then(res => {
@@ -1207,6 +1204,8 @@
 		});
 
 		function clickPrefs() {
+			potaLog('check');
+
 			for (var k in prefs) {
 				if (k == 'zoom_threshold' || k == 'spot_period' || k.includes('uuid')) {
 					Cookies.set(k, String(prefs[k]),
@@ -1505,18 +1504,18 @@
 
 			if (enable_experimental && prefs['pilgrim'])
 				programs += 'PILGRIM';
-		
+
 			logid = getLogID();
 			if (prefs['show_potalog'] && logid != "null") {
 				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
 					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
-					'&min_elev=' + elev + '&min_area=' + level +'&log_id=' + logid;
+					'&min_elev=' + elev + '&min_area=' + level + '&log_id=' + logid;
 			} else
 				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
 					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
 					'&min_elev=' + elev + '&min_area=' + level;
 
-			res =fetch(sotaapp2 + '/search?' + query)
+			res = fetch(sotaapp2 + '/search?' + query)
 				.then(res => res.json())
 				.then(res => {
 
@@ -2035,31 +2034,31 @@
 		}
 
 		async function refresh_aprs_track() {
-/*
-			if (prefs['aprs_track']) {
-				if (aprs_layer) {
-					map.removeLayer(aprs_layer);
-					aprs_layer = L.layerGroup();
-				} else
-					aprs_layer = L.layerGroup();
-			} else {
-				if (aprs_layer)
-					map.removeLayer(aprs_layer);
-				return;
-			}
-
-			map.addLayer(aprs_layer);
-
-			let range = '24';
-			let api = sotalive + 'api/aprs-tracklog/tracks?region=JA&range=' + range;
-
-			let res = await fetch(api);
-			res = await res.json();
-			let tracks = res['tracks'];
-			for (const track of tracks) {
-				drawAPRSTrack(track['properties'], track['geometry']);
-			}
-				*/
+			/*
+						if (prefs['aprs_track']) {
+							if (aprs_layer) {
+								map.removeLayer(aprs_layer);
+								aprs_layer = L.layerGroup();
+							} else
+								aprs_layer = L.layerGroup();
+						} else {
+							if (aprs_layer)
+								map.removeLayer(aprs_layer);
+							return;
+						}
+			
+						map.addLayer(aprs_layer);
+			
+						let range = '24';
+						let api = sotalive + 'api/aprs-tracklog/tracks?region=JA&range=' + range;
+			
+						let res = await fetch(api);
+						res = await res.json();
+						let tracks = res['tracks'];
+						for (const track of tracks) {
+							drawAPRSTrack(track['properties'], track['geometry']);
+						}
+							*/
 		}
 
 		async function refresh_spots() {
