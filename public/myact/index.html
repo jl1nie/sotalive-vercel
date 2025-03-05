@@ -754,7 +754,7 @@
 					res = await fetchAPI(api + `/log/${prefs[keys[k]]}`, 'DELETE');
 
 					if (res) {
-						prefs[keys[k]] = "null"
+						prefs[keys[k]] = null;
 						el = document.getElementById(keys[k]);
 						el.innerText = '----';
 						if (k == 0)
@@ -842,10 +842,10 @@
 						prefs[keys[1]] = res['hunter_logid'];
 						potaLog('check');
 
-						if (res['activator_logid'] != "null")
+						if (res['activator_logid'] != null)
 							potaLog('show-act')
 
-						if (res['hunter_logid'] != "null")
+						if (res['hunter_logid'] != null)
 							potaLog('show-hunt')
 
 					} else {
@@ -1050,7 +1050,7 @@
 
 			let logid = getLogID();
 
-			if (prefs['show_potalog'] && logid != "null")
+			if (prefs['show_potalog'] && logid != null)
 				query += "&log_id=" + logid;
 
 			fetch(url + query)
@@ -1506,7 +1506,8 @@
 				programs += 'PILGRIM';
 
 			logid = getLogID();
-			if (prefs['show_potalog'] && logid != "null") {
+
+			if (prefs['show_potalog'] && logid != null) {
 				query = 'min_lat=' + se[0] + '&min_lon=' + nw[1]
 					+ '&max_lat=' + nw[0] + '&max_lon=' + se[1] +
 					'&min_elev=' + elev + '&min_area=' + level + '&log_id=' + logid;
