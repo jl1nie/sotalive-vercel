@@ -747,6 +747,7 @@
 
 				case 'del-act':
 					k = 0;
+					
 				case 'del-hunt':
 					if (command.includes('hunt'))
 						k = 1;
@@ -2035,7 +2036,7 @@
 		}
 
 		async function refresh_aprs_track() {
-/*
+
 			if (prefs['aprs_track']) {
 				if (aprs_layer) {
 					map.removeLayer(aprs_layer);
@@ -2051,7 +2052,7 @@
 			map.addLayer(aprs_layer);
 
 			let range = '24';
-			let api = sotalive + 'api/aprs-tracklog/tracks?region=JA&range=' + range;
+			let api = sotaapp2 + '/activation/aprs/track?pat_ref=JA&hours_ago=' + range;
 
 			let res = await fetch(api);
 			res = await res.json();
@@ -2059,7 +2060,6 @@
 			for (const track of tracks) {
 				drawAPRSTrack(track['properties'], track['geometry']);
 			}
-				*/
 		}
 
 		async function refresh_spots() {
