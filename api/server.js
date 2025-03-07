@@ -28,6 +28,8 @@ app.get('/', (req, res) => {
     }
 });
 
+process.on("uncaughtException", (error) => { console.error("Uncaught Exception:", error); });
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
