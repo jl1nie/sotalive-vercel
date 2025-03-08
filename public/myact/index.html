@@ -744,7 +744,7 @@
 
 				case 'del-act':
 					k = 0;
-					
+
 				case 'del-hunt':
 					if (command.includes('hunt'))
 						k = 1;
@@ -1880,7 +1880,7 @@
 		}
 
 		async function stat_db() {
-			let url = 'https://www.sotalive.net/api/myact/potalog?command=STAT';
+			let url = sotaapp2 + '/pota/log-stat';
 			let res = await fetch(url);
 			let hist = await res.json();
 
@@ -1959,7 +1959,7 @@
 				},
 			});
 			chart2.update();
-			let etime = "Query with " + hist['longest_entry'] + "entries took " + hist['query_elapsed_ms'] + "ms. (degraded " + hist['query_perf_degrade_ms'] + "ms)";
+			let etime = "Query with " + hist['longest_entry'] + "entries took " + hist['query_latency'] + "ms.";
 			document.getElementById("perf_mon").innerHTML = etime;
 		}
 
