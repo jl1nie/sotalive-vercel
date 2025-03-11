@@ -640,6 +640,10 @@
 			maxZoom: 18, maxNativeZoom: 18, attribution: gsi_attribution
 		});
 
+		var osm = L.tileLayer('https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=767750c193e54ceeb3aee08d880bdb90', {
+			maxZoom: 18, maxNativeZoom: 18, attribution: "<a href='https://www.thunderforest.com/'>Thunderforest</a>"
+		});
+
 		var yamareco_summer = L.tileLayer('https://www.yamareco.com/modules/yamareco/include/get_tileimg.php?type=dot_summer&z={z}&y={y}&x={x}', {
 			maxZoom: 18, maxNativeZoom: 16, attribution: "<a href='https://www.yamareco.com/' target='_blank'>ヤマレコ</a>"
 		});
@@ -656,7 +660,9 @@
 		var baseLayerControls = {
 			'地理院地形図': gsi,
 			'全国最新写真': gsi_photo,
+			'OSM': osm
 		};
+
 		if (enable_experimental) {
 			var overlayLayerControls = {
 				'ヤマレコみんなの足跡(登山道)': yamareco_summer,
