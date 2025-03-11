@@ -1539,9 +1539,7 @@
 								popup = true
 								_popupMarker = null
 							}
-							show_summit_marker.push(
-								placeSummitMarker([s['lat'], s['lon']], z, s['alt'], s['count'], popup))
-
+							show_summit_marker.push(placeSummitMarker([s['lat'], s['lon']], z, s['alt'], s['count'], popup))
 						}
 					for (const s of res['pota']) {
 
@@ -1551,8 +1549,7 @@
 							'name': s['nameJ']
 						}, false);
 						if (pname != '')
-							show_summit_marker.push(
-								placeParkMarker([s['lat'], s['lon']], z, s))
+							show_summit_marker.push(placeParkMarker([s['lat'], s['lon']], z, s))
 					}
 					/*
 					for (const t of res['temples']) {

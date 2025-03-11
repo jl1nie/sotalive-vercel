@@ -97,7 +97,7 @@ async function local_reverse_geocoder_gsi(lat, lng, elev) {
 	} else {
 		const p_err = Promise.resolve({
 			'errors': 'OUTSIDE_JA',
-			'maidenhead': result.Maindenhead
+			'maidenhead': result.maidenhead
 		});
 		cache_rev.set(pos, p_err);
 		return p_err;
