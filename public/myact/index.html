@@ -594,7 +594,6 @@
 					return {}
 				}
 				let res = await response.json();
-				console.log(res);
 				return res;
 			} catch (error) {
 				console.error(`API ${endpoint} request failed:`, error);
@@ -750,6 +749,7 @@
 
 				case 'del-act':
 					k = 0;
+
 				case 'del-hunt':
 					if (command.includes('hunt'))
 						k = 1;
@@ -1885,7 +1885,7 @@
 		}
 
 		async function stat_db() {
-			let url = 'https://www.sotalive.net/api/myact/potalog?command=STAT';
+			let url = sotaapp2 + '/pota/log-stat';
 			let res = await fetch(url);
 			let hist = await res.json();
 
@@ -1946,12 +1946,6 @@
 								},
 							},
 						},
-
-						y: {
-							display: true,
-							position: 'left',
-							stepSize: 10,
-						},
 						y1: {
 							display: true,
 							position: 'right',
@@ -1960,11 +1954,16 @@
 								drawOnChartArea: false,
 							},
 						},
+						y: {
+							display: true,
+							position: 'left',
+							stepSize: 10,
+						},
 					}
 				},
 			});
 			chart2.update();
-			let etime = "Query with " + hist['longest_entry'] + "entries took " + hist['query_elapsed_ms'] + "ms. (degraded " + hist['query_perf_degrade_ms'] + "ms)";
+			let etime = "Query with " + hist['longest_entry'] + "entries took " + hist['query_latency'] + "ms.";
 			document.getElementById("perf_mon").innerHTML = etime;
 		}
 
@@ -2041,31 +2040,30 @@
 		}
 
 		async function refresh_aprs_track() {
-			/*
-						if (prefs['aprs_track']) {
-							if (aprs_layer) {
-								map.removeLayer(aprs_layer);
-								aprs_layer = L.layerGroup();
-							} else
-								aprs_layer = L.layerGroup();
-						} else {
-							if (aprs_layer)
-								map.removeLayer(aprs_layer);
-							return;
-						}
-			
-						map.addLayer(aprs_layer);
-			
-						let range = '24';
-						let api = sotalive + 'api/aprs-tracklog/tracks?region=JA&range=' + range;
-			
-						let res = await fetch(api);
-						res = await res.json();
-						let tracks = res['tracks'];
-						for (const track of tracks) {
-							drawAPRSTrack(track['properties'], track['geometry']);
-						}
-							*/
+
+			if (prefs['aprs_track']) {
+				if (aprs_layer) {
+					map.removeLayer(aprs_layer);
+					aprs_layer = L.layerGroup();
+				} else
+					aprs_layer = L.layerGroup();
+			} else {
+				if (aprs_layer)
+					map.removeLayer(aprs_layer);
+				return;
+			}
+
+			map.addLayer(aprs_layer);
+
+			let range = '24';
+			let api = sotaapp2 + '/activation/aprs/track?pat_ref=JA&hours_ago=' + range;
+
+			let res = await fetch(api);
+			res = await res.json();
+			let tracks = res['tracks'];
+			for (const track of tracks) {
+				drawAPRSTrack(track['properties'], track['geometry']);
+			}
 		}
 
 		async function refresh_spots() {
