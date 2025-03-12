@@ -301,7 +301,7 @@
 						<div class="form-group">
 							<label class="control-label"><u>マーカ</u></label>
 							<p>表示する数:&nbsp&nbsp<b>多</b>&nbsp&nbsp&nbsp
-								<input id="zoom-threshold" data-slider-id='ex1Slider' type="text" data-slider-min="9"
+								<input id="zoom-threshold" data-slider-id='ex1Slider' type="text" data-slider-min="7"
 									data-slider-max="12" data-slider-step="1"
 									data-slider-value="12" />&nbsp&nbsp&nbsp&nbsp<b>少</b>
 							</p>
@@ -1022,6 +1022,16 @@
 			}
 		}
 
+		// 東経→西経変換
+		function toWestLon(lon) {
+			return lon > 180 ? lon - 360 : lon;
+		}
+
+		// 西経→東経変換
+		function toEastLon(lon) {
+			return lon < 0 ? lon + 360 : lon;
+		}
+
 		function displayPopup(area, latlng, isMarker, isGPS) {
 			var lat = Math.round(latlng.lat * 1000000, 4) / 1000000,
 				lng = Math.round(latlng.lng * 1000000, 4) / 1000000,
@@ -1050,7 +1060,7 @@
 				mode = 'POTA';
 			} else {
 				url += '/sota/summits/search';
-				query += 'lat=' + latlng.lat + '&lon=' + latlng.lng + "&dist=200";
+				query += 'lat=' + latlng.lat + '&lon=' + toWestLon(latlng.lng) + "&dist=200";
 				mode = 'SOTA';
 			}
 
@@ -1149,8 +1159,10 @@
 
 							function cont(mapcode) {
 								weather = '&nbsp&nbsp<a href="' + windyuri +
-									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>' +
-									mapcode;
+									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>';
+
+								if (mapcode)
+									weather += '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + mapcode;
 
 								if ('areacode' in res && res['areacode'])
 									area['areacode'] = res['areacode'][0];
@@ -1184,8 +1196,7 @@
 							if (prefs['display_mapcode']) {
 								get_mapcode(latlng.lat, latlng.lng)
 									.then(code => {
-										mapcode = '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + code;
-										cont(mapcode)
+										cont(code)
 									})
 							}
 							else
@@ -1480,7 +1491,7 @@
 			_popupMarker = latlng
 		}
 
-		function placeSummitMarkers(nw, se, z) {
+		function placeSummitMarkers(nw, se, z, needtrans) {
 			var popup, elev, prefix, level, query, programs, logid;
 
 			if (z >= prefs['zoom_threshold']) {
@@ -1532,6 +1543,10 @@
 						wz = z;
 					if (prefs['sota_ref'])
 						for (const s of res['sota']) {
+
+							if (needtrans)
+								s['lon'] = toEastLon(s['lon']);
+
 							popup = false
 							if (_popupMarker &&
 								s['lat'] == _popupMarker[0] &&
@@ -1542,6 +1557,8 @@
 							show_summit_marker.push(placeSummitMarker([s['lat'], s['lon']], z, s['alt'], s['count'], popup))
 						}
 					for (const s of res['pota']) {
+						if (needtrans)
+							s['lon'] = toEastLon(s['lon']);
 
 						var pname = selectRef({
 							'pota': s['pota'],
@@ -1796,8 +1813,24 @@
 			deleteSummitMarker();
 			var z = map.getZoom();
 			var b = map.getBounds();
-			placeSummitMarkers([b['_northEast']['lat'], b['_southWest']['lng']],
-				[b['_southWest']['lat'], b['_northEast']['lng']], z);
+			let orgsw = b['_southWest']['lng'];
+			let orgne = b['_northEast']['lng'];
+			var swlon = toWestLon(orgsw);
+			var nelon = toWestLon(orgne);
+
+			if (nelon == orgne) {
+				placeSummitMarkers([b['_northEast']['lat'], orgsw],
+					[b['_southWest']['lat'], orgne], z, false);
+			} else if (swlon != orgsw) {
+				placeSummitMarkers([b['_northEast']['lat'], swlon],
+					[b['_southWest']['lat'], nelon], z, true);
+
+			} else {
+				placeSummitMarkers([b['_northEast']['lat'], orgsw],
+					[b['_southWest']['lat'], 180], z, false);
+				placeSummitMarkers([b['_northEast']['lat'], -180],
+					[b['_southWest']['lat'], nelon], z, true);
+			}
 			//placeHamFairMarker({'lat':35.627288040687716, 'lng':139.79562967407333});
 		}
 
