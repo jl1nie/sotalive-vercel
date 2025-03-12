@@ -1034,7 +1034,7 @@
 
 		function displayPopup(area, latlng, isMarker, isGPS) {
 			var lat = Math.round(latlng.lat * 1000000, 4) / 1000000,
-				lng = toWestLon(Math.round(latlng.lng * 1000000, 4) / 1000000),
+				lng = Math.round(toWestLon(latlng.lng) * 1000000, 4) / 1000000,
 				z = map.getZoom();
 
 			if (z > 11)
