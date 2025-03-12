@@ -1051,7 +1051,8 @@
 
 			var url = sotaapp2;
 			var query = '?';
-			var mode = ''
+			var mode = '';
+			var sname = '';
 
 			if (area['pota']) {
 				area['pota'] = replacePOTAref(area['pota']);
@@ -1080,10 +1081,15 @@
 							s = res[0]
 							area['sota_code'] = s['summitCode'];
 							area['sota'] = s['summitCode'] + ' ' + s['summitName'];
-							if (area['name'])
-								area['name'] += ' / ' + s['summitNameJ'];
+							if (s['summitNameJ'])
+								sname = s['summitNameJ'];
 							else
-								area['name'] = s['summitNameJ'];
+								sname = s['summitName'];
+
+							if (area['name'])
+								area['name'] += ' / ' + sname;
+							else
+								area['name'] = sname;
 
 							l = { 'lat': s['latitude'], 'lng': s['longitude'] }
 							displayActivationZone(l, -0.8);
