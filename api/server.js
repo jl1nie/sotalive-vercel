@@ -8,11 +8,13 @@ const staticDirs = {
     'myqth.vercel.app': '../public/myqth',
     'logconv.sotalive.net': '../public/logconv',
     'myqth.sotalive.net': '../public/myqth',
-    'localhost': 'public/myact',
+    'localhost': '../public/logconv',
 };
 
 app.use((req, res, next) => {
     const staticPath = staticDirs[req.hostname];
+    console.log(staticPath)
+    console.log(req.hostname)
     if (staticPath) {
         express.static(staticPath)(req, res, next);
     } else {
@@ -31,7 +33,4 @@ app.get('/', (req, res) => {
 
 process.on("uncaughtException", (error) => { console.error("Uncaught Exception:", error); });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+module.exports = app

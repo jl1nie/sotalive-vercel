@@ -2,12 +2,7 @@
     "name": "sotalive-vercel",
     "version": "1.0.0",
     "description": "sotalive static server",
-    "main": "server.js",
-    "scripts": {
-        "start": "node server.js"
-    },
     "dependencies": {
-        "express": "5.0.1",
-        "wrappy": "1.0.2"
+        "express": "5.0.1"
     }
 }
