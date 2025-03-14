@@ -1,15 +1,27 @@
 {
     "version": 2,
-    "functions": {
-        "api/server.js": {
-            "memory": 1024,
-            "includeFiles": "public/**"
-        }
-    },
-    "rewrites": [
+    "builds": [
         {
-            "source": "/(.*)",
-            "destination": "/api/server.js"
+            "src": "api/server.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "api/logconv.py",
+            "use": "@vercel/python"
+        },
+        {
+            "src": "public/**",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/logconv/(.*)",
+            "dest": "/api/logconv.py"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/server.js"
         }
     ]
 }

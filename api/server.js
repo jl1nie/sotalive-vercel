@@ -4,9 +4,9 @@ const app = express();
 module.exports = app;
 
 const staticDirs = {
-    'myqth.vercel.app': 'public/myqth',
+    'myqth.sotalive.net': 'public/myqth',
     'myact.vercel.app': 'public/myact',
-    'logconv.vercel.app': 'public/logconv',
+    'logconv.sotalive.net': 'public/logconv',
     'localhost': 'public/myact',
 };
 
