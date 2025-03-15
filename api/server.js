@@ -6,6 +6,7 @@ const app = express();
 const staticDirs = {
     'myact.vercel.app': '/public/myact',
     'myqth.vercel.app': '/public/myqth',
+    'logconv.vercel.app': '/public/logconv',
     'logconv.sotalive.net': '/public/logconv',
     'myqth.sotalive.net': '/public/myqth',
     'localhost': '/public/logconv',
@@ -19,16 +20,17 @@ const defaultStaticPath = '/public/logconv'; // ルート配下のデフォル�
 app.use((req, res, next) => {
     let staticPath = staticDirs[req.hostname];
 
-    if (!staticPath && isVercelPreview(req.hostname)) {
+    if (isVercelPreview() && !staticPath) {
         staticPath = defaultStaticPath;
         console.log(`Preview detected: Using default path ${staticPath}`);
     }
 
-    console.log(`Hostname: ${req.hostname}, Static Path: ${staticPath}`);
+    let fullpath = path.join(process.cwd(), staticPath);
+    console.log(`Hostname: ${req.hostname}, Static Path: ${fullpath}`);
 
     if (staticPath) {
         // プロジェクトルートからの絶対パスを使用
-        express.static(path.join(process.cwd(), staticPath))(req, res, next);
+        express.static(fullpath)(req, res, next);
     } else {
         next();
     }
