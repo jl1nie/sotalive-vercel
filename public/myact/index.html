@@ -2105,9 +2105,9 @@
 		async function refresh_spots() {
 			const pat = encodeURIComponent("^(JA|JP-)");
 			let api = sotaapp2 + '/activation/spots?pat_ref=' + pat;
-			//if (prefs['pota_hunter_uuid'] != null) {
-			//	api += '&logid=' + prefs['pota_hunter_uuid'];
-			//}
+			if (prefs['pota_hunter_uuid'] != null) {
+				api += '&log_id=' + prefs['pota_hunter_uuid'];
+			}
 			if (prefs['by_call']) {
 				api += '&by_call=null';
 			} else {
@@ -2118,7 +2118,6 @@
 			let res = await fetch(api);
 			res = await res.json();
 			let sdata = res;
-			//let logs = res['logs'];
 			let datasets = [];
 			let radius = 0;
 			let rc = 0;
@@ -2129,6 +2128,8 @@
 					let spots = sdata[i]['values'];
 					let sp = [];
 					if (spots[0]['program'] == prog) {
+						let qsos = spots[0]['qsos'];
+
 						for (const p of spots) {
 							sp.push(
 								{
@@ -2140,9 +2141,8 @@
 								})
 						}
 
-						if (prefs['by_call'] || prog == 'SOTA' /*||
-						!prefs['show_potalog'] ||
-						(ref in logs && logs[ref].length == 1)*/) {
+						if (prefs['by_call'] || prog == 'SOTA' ||
+							!prefs['show_potalog'] || qsos != null) {
 							d = {
 								label: ref,
 								pointRadius: 5,
