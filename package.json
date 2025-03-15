@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "description": "sotalive static server",
     "dependencies": {
-        "express": "5.0.1"
+        "express": "4.21.2"
     }
 }

@@ -1022,14 +1022,13 @@ def getPOTALoc(parkid):
     if parkid in potaloc_cache.keys():
         return potaloc_cache[parkid]
     
-    url = f"https://www.sotalive.net/api/sota-jaff-pota?refid={parkid}"
+    url = f"https://sotaapp2.sotalive.net/api/v2/pota/parks/{parkid}"
     res = requests.get(url)
-    js = res.json()
-    r = []
-    if js:
-        js = js['reference']
-        for p in js:
-            r += p['locid']
+    if res.status_code == 200:
+        js = res.json()
+        r = js['parkLocid'].split(",")
+    else:
+        r = ["UNKNOWN"]
     potaloc_cache[parkid] = r
     return r
 
