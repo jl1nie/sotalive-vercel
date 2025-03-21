@@ -186,7 +186,8 @@
 
 <body>
 	<nav class="navbar navbar-expand-md navbar-dark bg-dark text-light">
-		<span class="navbar-brand" style="cursor: hand;cursor: pointer;">
+		<span class="navbar-brand" style="cursor: hand;cursor: pointer;" data-toggle="modal"
+			data-target="#modal-mackerel">
 			<h4>MyACT</h4>
 		</span>
 		<button type="button" class="btn btn-amber" onclick="clickQTHButton()" title="現在位置を調べる"><span
@@ -257,6 +258,25 @@
 		<div class="row">
 			<div class="col-md-12">
 				<div id="map"></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal" id="modal-mackerel" tabindex="-1" role="dialog" aria-labelledby="staticModalLabel"
+		aria-hidden="true" data-show="true" data-keyboard="false" data-backdrop="static">
+		<div class="modal-dialog">
+			<div class="modal-content text-light bg-dark">
+				<div class="modal-header">
+					<h5>System status</h5>
+					<button type="button" class="close" data-dismiss="modal">
+						<h6><span aria-hidden="true">&#215;</span></h6>
+					</button>
+				</div><!-- /modal-header -->
+				<div class="modal-body">
+					<iframe
+						src="https://mackerel.io/embed/public/embed/j42irFtBHGgQVhFHMTnvwxfquNzy66gv9v4K80nGiN4UFll9Q3DzOiAhxr33tDOA?period=4h23m&amp;simplified=false&amp;stacked=false"
+						height="200" width="400" frameborder="0"></iframe>
+				</div>
 			</div>
 		</div>
 	</div>
