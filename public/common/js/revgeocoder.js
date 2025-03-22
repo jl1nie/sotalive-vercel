@@ -72,11 +72,8 @@ async function local_reverse_geocoder_gsi(lat, lng, elev) {
 
 	if (result.muniCode) {
 		if (res['results']['lv01Nm'] != "−") {
-			result['municipality'] = res['results']['lv01Nm'];
-		} else {
-			result['municipality'] = "";
+			result['municipality'] += res['results']['lv01Nm'];
 		}
-
 		result.errors = 'OK';
 		if (elev) {
 			const p_elev = res_elev
