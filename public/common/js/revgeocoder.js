@@ -39,122 +39,129 @@ async function local_reverse_geocoder(lat, lng, elev) {
 }
 
 async function local_reverse_geocoder_gsi(lat, lng, elev) {
-	let pos = '?lat=' + String(lat) + '&lon=' + String(lng);
+	const pos = `?lat=${lat}&lon=${lng}`;
 
+	// キャッシュチェック
 	if (cache_rev.has(pos)) {
 		return cache_rev.get(pos);
 	}
 
+	// キャッシュ整理
 	if (cache_rev.size >= 16) {
 		const oldest = cache_rev.keys().next().value;
 		cache_rev.delete(oldest);
 	}
 
-	let rev_uri = endpoint['revgeocode'] + pos
-	let elev_uri = endpoint['elevation'] + pos + '&outtype=JSON'
-	let res_elev = null;
+	// 高度取得は並列処理
+	const elev_promise = elev ? local_get_elevation(lat, lng) : Promise.resolve(null);
 
-	if (elev)
-		res_elev = local_get_elevation(lat, lng);
+	try {
+		// 逆ジオコーディング
+		const rev_result = await fetch(`${endpoint.revgeocode}${pos}`).then(res => res.json());
 
-	let res = await fetch(rev_uri);
-	res = await res.json();
+		// 自治体コード取得
+		const muni_code = rev_result?.results?.muniCd ? `&muni_code=${rev_result.results.muniCd}` : '';
+		const result = await fetch(`${endpoint.muni}${pos}${muni_code}`).then(res => res.json());
 
-	let muni_uri =
-		endpoint['muni'] + pos;
-
-	if ('results' in res)
-		muni_uri += '&muni_code=' + res['results']['muniCd'];
-	//muni_uri += '&addr=' + res['results']['lv01Nm'];
-
-	let res2 = await fetch(muni_uri);
-	let result = await res2.json()
-
-	if (result.muniCode) {
-		if (res['results']['lv01Nm'] != "−") {
-			result['municipality'] += res['results']['lv01Nm'];
+		if (!result.muniCode) {
+			const err = {
+				errors: 'OUTSIDE_JA',
+				maidenhead: result.maidenhead
+			};
+			cache_rev.set(pos, Promise.resolve(err));
+			return err;
 		}
+
+		// 地名追加
+		if (rev_result?.results?.lv01Nm !== "−") {
+			result.municipality += rev_result.results.lv01Nm;
+		}
+
 		result.errors = 'OK';
+
+		// 高度情報追加
 		if (elev) {
-			const p_elev = res_elev
-				.then(res => {
-					result.elevation = res['elevation']
-					result.hsrc = res['hsrc']
-					if (res['elevation'] == '-----')
-						result.errors = 'OUTSIDE_JA';
-					return Promise.resolve(result);
-				});
-			cache_rev.set(pos, p_elev);
-			return p_elev;
-		} else {
-			const p_pos = Promise.resolve(result);
-			cache_rev.set(pos, p_pos);
-			return p_pos;
+			const elevResult = await elev_promise;
+			result.elevation = elevResult.elevation;
+			result.hsrc = elevResult.hsrc;
+
+			if (elevResult.elevation === '-----') {
+				result.errors = 'OUTSIDE_JA';
+			}
 		}
-	} else {
-		const p_err = Promise.resolve({
-			'errors': 'OUTSIDE_JA',
-			'maidenhead': result.maidenhead
-		});
-		cache_rev.set(pos, p_err);
-		return p_err;
+
+		cache_rev.set(pos, Promise.resolve(result));
+		return result;
+
+	} catch (error) {
+		console.error("Error in local_reverse_geocoder_gsi:", error);
+		const err = {
+			errors: 'ERROR',
+			maidenhead: null
+		};
+		cache_rev.set(pos, Promise.resolve(err));
+		return err;
 	}
 }
 
 async function local_reverse_geocoder_yahoo(lat, lng, elev) {
-	let pos = '?lat=' + String(lat) + '&lon=' + String(lng);
+	const pos = `?lat=${lat}&lon=${lng}`;
 
+	// キャッシュチェック
 	if (cache_rev.has(pos)) {
 		return cache_rev.get(pos);
 	}
 
+	// キャッシュ整理
 	if (cache_rev.size >= 16) {
 		const oldest = cache_rev.keys().next().value;
 		cache_rev.delete(oldest);
 	}
 
-	let rev_uri = endpoint['revyahoo'] + pos
-	let elev_uri = endpoint['elevation'] + pos + '&outtype=JSON'
-	let res_elev = null;
+	// 高度取得は並列処理
+	const elev_promise = elev && enable_gsi_elevation ? local_get_elevation(lat, lng) : Promise.resolve(null);
 
-	if (elev && enable_gsi_elevation)
-		res_elev = local_get_elevation(lat, lng);
+	try {
+		// 逆ジオコーディング
+		const result = await fetch(`${endpoint.revyahoo}${pos}`).then(res => res.json());
 
-	let res = await fetch(rev_uri);
-	result = await res.json();
+		if (result.errors !== 'OK') {
+			const err = {
+				errors: 'OUTSIDE_JA',
+				maidenhead: result.maidenhead
+			};
+			cache_rev.set(pos, Promise.resolve(err));
+			return err;
+		}
 
-	if (result['errors'] == 'OK') {
+		// 高度情報追加
 		if (elev) {
 			if (enable_gsi_elevation) {
-				const p_elev = res_elev
-					.then(res => {
-						result['elevation'] = res['elevation']
-						result['hsrc'] = res['hsrc']
-						if (res['elevation'] == '-----')
-							result['errors'] = 'OUTSIDE_JA';
-						return Promise.resolve(result);
-					});
-				cache_rev.set(pos, p_elev);
-				return p_elev;
+				const elevResult = await elev_promise;
+				result.elevation = elevResult.elevation;
+				result.hsrc = elevResult.hsrc;
+
+				if (elevResult.elevation === '-----') {
+					result.errors = 'OUTSIDE_JA';
+				}
 			} else {
-				result['elavation'] = '-----';
-				result['hsrc'] = '-----';
-				const p_err = Promise.resolve(result);
-				cache_rev.set(pos, p_err);
-				return p_err;
+				// ここのelavationって綴りミスってるから直しとくわ！
+				result.elevation = '-----';
+				result.hsrc = '-----';
 			}
-		} else {
-			const p_pos = Promise.resolve(result);
-			cache_rev.set(pos, p_pos);
-			return p_pos;
 		}
-	} else {
-		const p_err = Promise.resolve({
-			'errors': 'OUTSIDE_JA',
-			'maidenhead': result['maidenhead']
-		});
-		cache_rev.set(pos, p_err);
-		return p_err;
+
+		cache_rev.set(pos, Promise.resolve(result));
+		return result;
+
+	} catch (error) {
+		console.error("Error in local_reverse_geocoder_yahoo:", error);
+		const err = {
+			errors: 'ERROR',
+			maidenhead: null
+		};
+		cache_rev.set(pos, Promise.resolve(err));
+		return err;
 	}
 }
 
