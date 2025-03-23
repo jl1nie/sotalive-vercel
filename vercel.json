@@ -4,13 +4,18 @@
             "memory": 1024
         }
     },
+    "trailingSlash": false,
     "rewrites": [
         {
-            "source": "/api/logconv/(.*)",
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/api/logconv/:match*",
             "destination": "/api/logconv.py"
         },
         {
-            "source": "/(.*)",
+            "source": "/:match*",
             "has": [
                 {
                     "type": "host",
@@ -21,10 +26,10 @@
                     "value": "myact.sotalive.net"
                 }
             ],
-            "destination": "/myact/$1"
+            "destination": "/myact/:match*"
         },
         {
-            "source": "/(.*)",
+            "source": "/:match*",
             "has": [
                 {
                     "type": "host",
@@ -35,10 +40,10 @@
                     "value": "myqth.sotalive.net"
                 }
             ],
-            "destination": "/myqth/$1"
+            "destination": "/myqth/:match*"
         },
         {
-            "source": "/(.*)",
+            "source": "/:match*",
             "has": [
                 {
                     "type": "host",
@@ -49,11 +54,7 @@
                     "value": "logconv.sotalive.net"
                 }
             ],
-            "destination": "/logconv/$1"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/logconv/$1"
+            "destination": "/logconv/:match*"
         }
     ]
 }

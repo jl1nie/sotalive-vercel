@@ -2,7 +2,5 @@
     "name": "sotalive-vercel",
     "version": "1.0.0",
     "description": "sotalive static server",
-    "dependencies": {
-        "express": "4.21.2"
-    }
+    "dependencies": {}
 }
