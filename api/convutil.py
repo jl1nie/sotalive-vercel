@@ -16,8 +16,7 @@ def writeZIP(files):
         for k, v in files.items():
             z.writestr(k, v)
         z.close()
-    buff.seek(0)
-    return buff
+    return buff.getvalue()
 
 def emitError(txt):
     print("Content-Type:text/html\n\n")

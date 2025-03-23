@@ -1,21 +1,59 @@
 {
     "functions": {
-        "api/server.js": {
-            "includeFiles": "public/**",
-            "memory": 512
-        },
         "api/logconv.py": {
-            "memory": 512
+            "memory": 1024
         }
     },
-    "routes": [
+    "rewrites": [
         {
-            "src": "/api/logconv/(.*)",
-            "dest": "api/logconv.py"
+            "source": "/api/logconv/(.*)",
+            "destination": "/api/logconv.py"
         },
         {
-            "src": "/(.*)",
-            "dest": "/api/server.js"
+            "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "myact.vercel.app"
+                },
+                {
+                    "type": "host",
+                    "value": "myact.sotalive.net"
+                }
+            ],
+            "destination": "/myact/$1"
+        },
+        {
+            "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "myqth.vercel.app"
+                },
+                {
+                    "type": "host",
+                    "value": "myqth.sotalive.net"
+                }
+            ],
+            "destination": "/myqth/$1"
+        },
+        {
+            "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "logconv.vercel.app"
+                },
+                {
+                    "type": "host",
+                    "value": "logconv.sotalive.net"
+                }
+            ],
+            "destination": "/logconv/$1"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/logconv/$1"
         }
     ]
 }

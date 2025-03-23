@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from http.server import BaseHTTPRequestHandler
 import datetime
 import json
 import logging
@@ -11,149 +11,219 @@ from api.convutil import (
     writeZIP,
 )
 from api.fleonline import do_command, compileFLE
-
 from api.wspr import WSPRspots
+import cgi
+import io
 
-app = Flask(__name__)
 logger = logging.getLogger("Hamlogconv")
 logging.basicConfig(level=logging.ERROR)
 
-
-@app.route("/api/logconv/hamlog", methods=["POST"])
-def logconv():
-    # フォームデータの取得
-    activation_call = request.form.get("activation_call")
-    chaser_call = request.form.get("chaser_call")
-    pota_activation_call = request.form.get("pota_activation_call")
-    gpx_trk_interval = request.form.get("gpx_trk_interval")
-    command = request.form.get("command")
-
-    options = {
-        "Portable": request.form.get("portable", ""),
-        "QTH": request.form.get("QTH", ""),
-        "hisQTH": request.form.get("hisQTH", ""),
-        "hisQTHopt": request.form.get("hisQTHopt", ""),
-        "myQTH": request.form.get("myQTH", ""),
-        "Note": request.form.get("Note", ""),
-        "Summit": request.form.get("summit", ""),
-        "Location": request.form.get("location", ""),
-        "WWFFOperator": request.form.get("wwffoperator", ""),
-        "WWFFActivator": request.form.get("wwffact_call", ""),
-        "WWFFRef": request.form.get("wwffref", ""),
-        "SOTAActivator": activation_call,
-        "POTAActivator": pota_activation_call,
-        "POTAOperator": request.form.get("pota_operator"),
-        "Park": request.form.get("park", ""),
-    }
-
-    # ファイルの取得
-    if "filename" not in request.files:
-        return Response(
-            json.dumps({"error": "Please input HAMLOG csv file."}),
-            status=400,
-            mimetype="application/json",
-        )
-    fileitem = request.files["filename"]
-    fp = fileitem.stream
-
-    # ファイル名の生成
-    now = datetime.datetime.now()
-    fname = now.strftime("%Y-%m-%d-%H-%M")
-
-    inchar = "cp932"
-    outchar = "utf-8"
-
-    try:
-        if activation_call:
-            callsign = activation_call
-            fname = f"sota-{fname}.zip"
-            files = sendSOTA_A(fp, decodeHamlog, callsign, options, inchar, outchar)
-            zip_data = writeZIP(files)
-            return Response(
-                zip_data,
-                mimetype="application/zip",
-                headers={"Content-Disposition": f"attachment; filename={fname}"},
-            )
-
-        elif chaser_call:
-            callsign = chaser_call
-            fname = f"sota-{fname}.zip"
-            files = sendSOTA_C(fp, decodeHamlog, callsign, options, inchar, outchar)
-            zip_data = writeZIP(files)
-            return Response(
-                zip_data,
-                mimetype="application/zip",
-                headers={"Content-Disposition": f"attachment; filename={fname}"},
-            )
-
-        elif pota_activation_call:
-            files, res = sendADIF(fp, options, inchar, outchar)
-            if command == "ADIFCSVCheck":
-                return Response(json.dumps(res), mimetype="application/json")
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        try:
+            # パスで処理を分岐
+            if self.path.startswith('/api/logconv/hamlog'):
+                self.handle_hamlog()
+            elif self.path.startswith('/api/logconv/fleonline'):
+                self.handle_fleonline()
+            elif self.path.startswith('/api/logconv/wspr'):
+                self.handle_wspr()
             else:
-                fname = f"adif-{fname}.zip"
-                zip_data = writeZIP(files)
-                return Response(
-                    zip_data,
-                    mimetype="application/zip",
-                    headers={"Content-Disposition": f"attachment; filename={fname}"},
-                )
+                self.send_error(404, "Not Found")
+        except Exception as e:
+            logger.error("stack trace:", exc_info=True)
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+    
+    def handle_hamlog(self):
+        # content-typeからマルチパートかどうか判断
+        content_type = self.headers.get('Content-Type', '')
+        
+        # フォームデータの解析
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST'}
+        )
+        
+        # フォームデータの取得
+        activation_call = form.getvalue("activation_call")
+        chaser_call = form.getvalue("chaser_call")
+        pota_activation_call = form.getvalue("pota_activation_call")
+        gpx_trk_interval = form.getvalue("gpx_trk_interval")
+        command = form.getvalue("command")
+
+        options = {
+            "Portable": form.getvalue("portable", ""),
+            "QTH": form.getvalue("QTH", ""),
+            "hisQTH": form.getvalue("hisQTH", ""),
+            "hisQTHopt": form.getvalue("hisQTHopt", ""),
+            "myQTH": form.getvalue("myQTH", ""),
+            "Note": form.getvalue("Note", ""),
+            "Summit": form.getvalue("summit", ""),
+            "Location": form.getvalue("location", ""),
+            "WWFFOperator": form.getvalue("wwffoperator", ""),
+            "WWFFActivator": form.getvalue("wwffact_call", ""),
+            "WWFFRef": form.getvalue("wwffref", ""),
+            "SOTAActivator": activation_call,
+            "POTAActivator": pota_activation_call,
+            "POTAOperator": form.getvalue("pota_operator"),
+            "Park": form.getvalue("park", ""),
+        }
+
+        # ファイルの取得
+        if "filename" not in form:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Please input HAMLOG csv file."}).encode('utf-8'))
+            return
+            
+        fileitem = form["filename"]
+        # ファイルデータをStreamに変換
+        if fileitem.file:
+            fp = fileitem.file
         else:
-            fname = f"airhamlog-{fname}.csv"
-            res = sendAirHamLog(fp, fname, decodeHamlog, options, inchar, outchar)
-            return Response(
-                res,
-                mimetype="text/csv",
-                headers={"Content-Disposition": f"attachment; filename={fname}"},
-            )
+            fp = io.BytesIO(fileitem.value)
 
-    except Exception as e:
-        logger.error("stack trace:", exc_info=True)
-        logger.error(f"options: {options}")
-        return Response(
-            json.dumps({"error": str(e)}), status=500, mimetype="application/json"
-        )
+        # ファイル名の生成
+        now = datetime.datetime.now()
+        fname = now.strftime("%Y-%m-%d-%H-%M")
 
+        inchar = "cp932"
+        outchar = "utf-8"
 
-@app.route("/api/logconv/fleonline", methods=["POST"])
-def fleonline():
-    command = request.form.get("command", None)
-    arg = request.form.get("arg", json.dumps("None"))
-    text = request.form.get("edittext", None)
-
-    now = datetime.datetime.now()
-    fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M") + ".zip"
-
-    try:
-        if command:
-            if len(arg) < 131072:
-                res = do_command(command, arg)
-                return Response(json.dumps(res), mimetype="application/json")
+        try:
+            if activation_call:
+                callsign = activation_call
+                fname = f"sota-{fname}.zip"
+                files = sendSOTA_A(fp, decodeHamlog, callsign, options, inchar, outchar)
+                zip_data = writeZIP(files)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                self.end_headers()
+                self.wfile.write(zip_data)
+                self.wfile.flush()  # flushする！
+           
+            elif chaser_call:
+                callsign = chaser_call
+                fname = f"sota-{fname}.zip"
+                files = sendSOTA_C(fp, decodeHamlog, callsign, options, inchar, outchar)
+                zip_data = writeZIP(files)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                self.end_headers()
+                self.wfile.write(zip_data)
+                self.wfile.flush()  # flushする！
+            
+            elif pota_activation_call:
+                files, res = sendADIF(fp, options, inchar, outchar)
+                if command == "ADIFCSVCheck":
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(res).encode('utf-8'))
+                else:
+                    fname = f"adif-{fname}.zip"
+                    zip_data = writeZIP(files)
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/zip')
+                    self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                    self.send_header('Content-Length', str(len(zip_data)))  # 長さ指定！
+                    self.end_headers()
+                    
+                    self.wfile.write(zip_data)
+                    self.wfile.flush()  # flushする！
             else:
-                return Response(
-                    json.dumps({"error": "Line too long"}),
-                    status=500,
-                    mimetype="application/json",
-                )
-        elif text:
-            zip_data = compileFLE(text, True)
-            return Response(
-                zip_data,
-                mimetype="application/zip",
-                headers={"Content-Disposition": f"attachment; filename={fname}"},
-            )
+                fname = f"airhamlog-{fname}.csv"
+                res = sendAirHamLog(fp, fname, decodeHamlog, options, inchar, outchar)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/csv')
+                self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                self.end_headers()
+                self.wfile.write(res.encode(outchar))
 
-    except Exception as e:
-        logger.error("stack trace:", exc_info=True)
-        logger.error(f"options: {command, arg, text}")
-        return Response(
-            json.dumps({"error": str(e)}), status=500, mimetype="application/json"
+        except Exception as e:
+            logger.error("stack trace:", exc_info=True)
+            logger.error(f"options: {options}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+    
+    def handle_fleonline(self):
+        # content-typeからマルチパートかどうか判断
+        content_type = self.headers.get('Content-Type', '')
+        
+        # フォームデータの解析
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST'}
         )
+        
+        command = form.getvalue("command", None)
+        arg = form.getvalue("arg", json.dumps("None"))
+        text = form.getvalue("edittext", None)
 
+        now = datetime.datetime.now()
+        fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M") + ".zip"
 
-@app.route("/api/logconv/wspr", methods=["POST"])
-def wspranalysis():
-    arg = request.form.get("arg", None)
-    svg_buffer = WSPRspots(arg)
-    response = Response(svg_buffer.getvalue(), content_type="image/svg+xml")
-    return response
+        try:
+            if command:
+                if len(arg) < 131072:
+                    res = do_command(command, arg)
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(res).encode('utf-8'))
+                else:
+                    self.send_response(500)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Line too long"}).encode('utf-8'))
+            elif text:
+                zip_data = compileFLE(text, True)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                self.send_header('Content-Length', str(len(zip_data)))  # 長さ指定！
+      
+                self.end_headers()
+                self.wfile.write(zip_data)
+                self.wfile.flush()  # flushする！
+        
+        except Exception as e:
+            logger.error("stack trace:", exc_info=True)
+            logger.error(f"options: {command, arg, text}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+    
+    def handle_wspr(self):
+        # フォームデータの解析
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST'}
+        )
+        
+        arg = form.getvalue("arg", None)
+        svg_buffer = WSPRspots(arg)
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/svg+xml')
+        self.end_headers()
+        self.wfile.write(svg_buffer.getvalue())
+        
