@@ -19,10 +19,6 @@
             "has": [
                 {
                     "type": "host",
-                    "value": "myact.vercel.app"
-                },
-                {
-                    "type": "host",
                     "value": "myact.sotalive.net"
                 }
             ],
@@ -31,10 +27,6 @@
         {
             "source": "/:match*",
             "has": [
-                {
-                    "type": "host",
-                    "value": "myqth.vercel.app"
-                },
                 {
                     "type": "host",
                     "value": "myqth.sotalive.net"
@@ -47,11 +39,37 @@
             "has": [
                 {
                     "type": "host",
-                    "value": "logconv.vercel.app"
-                },
+                    "value": "logconv.sotalive.net"
+                }
+            ],
+            "destination": "/logconv/:match*"
+        },
+        {
+            "source": "/:match*",
+            "has": [
                 {
                     "type": "host",
-                    "value": "logconv.sotalive.net"
+                    "value": "myact.vercel.app"
+                }
+            ],
+            "destination": "/myact/:match*"
+        },
+        {
+            "source": "/:match*",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "myqth.vercel.app"
+                }
+            ],
+            "destination": "/myqth/:match*"
+        },
+        {
+            "source": "/:match*",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "logconv.vercel.app"
                 }
             ],
             "destination": "/logconv/:match*"
