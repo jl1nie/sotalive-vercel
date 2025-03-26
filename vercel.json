@@ -45,6 +45,26 @@
             "destination": "/logconv/:match*"
         },
         {
+            "source": "/logconv/:match*",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.sotalive.net"
+                }
+            ],
+            "destination": "/logconv/:match*"
+        },
+        {
+            "source": "/:match*",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.sotalive.net"
+                }
+            ],
+            "destination": "/myact/:match*"
+        },
+        {
             "source": "/:match*",
             "has": [
                 {
