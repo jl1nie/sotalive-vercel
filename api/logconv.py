@@ -142,15 +142,16 @@ class handler(BaseHTTPRequestHandler):
                     self.wfile.write(zip_data)
                     self.wfile.flush()  # flushする！
             else:
-                fname = f"airhamlog-{fname}.csv"
-                res = sendAirHamLog(fp, fname, decodeHamlog, options, inchar, outchar)
-                
+                fname = f"airhamlog-{fname}"
+                files = sendAirHamLog(fp, fname+".csv", decodeHamlog, options, inchar, outchar)
+                zip_data = writeZIP(files)
                 self.send_response(200)
-                self.send_header('Content-Type', 'text/csv')
-                self.send_header('Content-Disposition', f"attachment; filename={fname}")
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', f"attachment; filename={fname}.zip")
                 self.end_headers()
-                self.wfile.write(res.encode(outchar))
-
+                self.wfile.write(zip_data)
+                self.wfile.flush()  # flushする！
+                
         except Exception as e:
             logger.error("stack trace:", exc_info=True)
             logger.error(f"options: {options}")

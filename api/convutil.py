@@ -1033,11 +1033,11 @@ def getPOTALoc(parkid):
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar, errors="backslashreplace")
+    files = {}
     linecount = 0
-    writer = csv.writer(sys.stdout,delimiter=',',
+    outstr = io.StringIO()
+    writer = csv.writer(outstr,delimiter=',',
                         quoting=csv.QUOTE_MINIMAL)
-    print('Content-Disposition: attachment;filename="%s"\n' % fname)
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         try:
@@ -1051,7 +1051,10 @@ def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
                     writer.writerow(toAirHam(decoder, linecount, row, options))
                 linecount += 1
         except Exception as e:
-            print('Line:{} Error{}'.format(linecount, e))
+            outstr.write('Line:{} Error{}'.format(linecount, e))
+    
+    files.update({fname : outstr.getvalue()})
+    return files
                 
 def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     prefix = 'sota'
