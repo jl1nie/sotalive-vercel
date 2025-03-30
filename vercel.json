@@ -29,6 +29,16 @@
             "has": [
                 {
                     "type": "host",
+                    "value": "mypilgrim.sotalive.net"
+                }
+            ],
+            "destination": "/myact/:match*"
+        },
+        {
+            "source": "/:match*",
+            "has": [
+                {
+                    "type": "host",
                     "value": "myqth.sotalive.net"
                 }
             ],
