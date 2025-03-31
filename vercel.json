@@ -112,6 +112,58 @@
     "headers": [
         {
             "source": "/(.*)",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "myact.sotalive.net",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "mypilgrim.sotalive.net",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "myqth.sotalive.net",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "logconv.sotalive.net",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "www.sotalive.net",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "myact.vercel.app",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "myqth.vercel.app",
+                    "not": true
+                },
+                {
+                    "type": "host",
+                    "value": "logconv.vercel.app",
+                    "not": true
+                },
+                {
+                    "type": "path",
+                    "value": "/api/logconv/(.*)",
+                    "not": true
+                },
+                {
+                    "type": "path",
+                    "value": "/",
+                    "not": true
+                }
+            ],
             "headers": [
                 {
                     "key": "Cache-Control",
