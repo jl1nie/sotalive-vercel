@@ -111,59 +111,52 @@
     ],
     "headers": [
         {
-            "source": "/(.*)",
-            "has": [
+            "source": "/",
+            "headers": [
                 {
-                    "type": "host",
-                    "value": "myact.sotalive.net",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "mypilgrim.sotalive.net",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "myqth.sotalive.net",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "logconv.sotalive.net",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "www.sotalive.net",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "myact.vercel.app",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "myqth.vercel.app",
-                    "not": true
-                },
-                {
-                    "type": "host",
-                    "value": "logconv.vercel.app",
-                    "not": true
-                },
-                {
-                    "type": "path",
-                    "value": "/api/logconv/(.*)",
-                    "not": true
-                },
-                {
-                    "type": "path",
-                    "value": "/",
-                    "not": true
+                    "key": "Cache-Control",
+                    "value": "no-cache"
                 }
-            ],
+            ]
+        },
+        {
+            "source": "/api/logconv/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                }
+            ]
+        },
+        {
+            "source": "/myact/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                }
+            ]
+        },
+        {
+            "source": "/myqth/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                }
+            ]
+        },
+        {
+            "source": "/logconv/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache"
+                }
+            ]
+        },
+        {
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Cache-Control",
