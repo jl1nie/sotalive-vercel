@@ -111,7 +111,7 @@
     ],
     "headers": [
         {
-            "source": "/404.html",
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Cache-Control",
