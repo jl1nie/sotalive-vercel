@@ -740,7 +740,7 @@
 					for (var k of keys) {
 						var el, mesg;
 
-						if (prefs[k] == "null") {
+						if (prefs[k] == null) {
 							el = document.getElementById(k);
 							el.innerText = '----';
 							continue;
@@ -1289,7 +1289,10 @@
 					$('#spot-period').slider('setValue', Number(ck))
 				}
 				else if (k.includes('uuid')) {
-					pref[k] = ck;
+					if (ck == "null")
+						pref[k] = null;
+					else
+						pref[k] = ck;
 				} else if (k.includes('pemu')) {
 					if (ck)
 						pref[k] = ck;
