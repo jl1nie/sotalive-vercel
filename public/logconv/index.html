@@ -1017,7 +1017,7 @@
 			}
 
 			textdirty = false;
-			clearLog();
+			clearLogFLE();
 
 			act_call = Cookies.get('pota_act_call')
 			if (act_call == undefined) {
@@ -1069,7 +1069,7 @@
 			}
 		}
 
-		function clearLog() {
+		function clearLogFLE() {
 			sota = document.getElementById("checkSOTA");
 			sota.checked = false;
 			wwff = document.getElementById("checkWWFF");
@@ -1105,7 +1105,7 @@
 				},
 				function (data, status, xhr) {
 					if (data.status == "OK") {
-						clearLog()
+						clearLogFLE()
 						textinterpreted = true;
 						if (data.logtype == "SOTA") {
 							sota = document.getElementById("checkSOTA");
