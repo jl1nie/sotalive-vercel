@@ -1,0 +1,86 @@
+/* CSS Reset and Base Styles */
+:root {
+  --vh: 1vh;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Leaflet Styles Override */
+.leaflet-container {
+  font-family: inherit;
+}
+
+/* Map Container Styles */
+.map-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+/* Mobile Viewport Height Fix */
+@media screen and (max-width: 767px) {
+  .map-container {
+    height: calc(var(--vh, 1vh) * 100 - 56px);
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .map-container {
+    height: calc(var(--vh, 1vh) * 100 - 64px);
+  }
+}
+
+/* Custom Tooltip Styles */
+.my-tooltip-label {
+  color: white;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 8px;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Blink Animation */
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@-webkit-keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.blink-me {
+  animation: blink 1s linear infinite;
+  -webkit-animation: blink 1s linear infinite;
+}
