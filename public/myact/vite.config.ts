@@ -1,10 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
+import { ENVIRONMENT_CONFIG } from './src/config/environment'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/myact/',
+  base: ENVIRONMENT_CONFIG.DEV_SERVER.BASE_PATH,
+  server: {
+    port: ENVIRONMENT_CONFIG.DEV_SERVER.PORT,
+    host: ENVIRONMENT_CONFIG.DEV_SERVER.HOST
+  },
+  publicDir: 'public',  // Enable public directory for static assets
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
