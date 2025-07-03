@@ -1,0 +1,97 @@
+/* ExtraMarkers CSS - Recreating the original marker styles */
+
+.extra-marker {
+  background: url('/common/img/markers_default.png') no-repeat;
+  width: 35px;
+  height: 45px;
+  position: relative;
+  border: none;
+  display: block;
+}
+
+.extra-marker::before {
+  content: '';
+  background: url('/common/img/markers_shadow.png') no-repeat;
+  width: 36px;
+  height: 16px;
+  position: absolute;
+  top: 44px;
+  left: -1px;
+  z-index: -1;
+}
+
+/* Circle markers */
+.extra-marker-circle-red { background-position: 0 0; }
+.extra-marker-circle-orange { background-position: -35px 0; }
+.extra-marker-circle-yellow { background-position: -70px 0; }
+.extra-marker-circle-blue { background-position: -105px 0; }
+.extra-marker-circle-cyan { background-position: -140px 0; }
+.extra-marker-circle-purple { background-position: -175px 0; }
+.extra-marker-circle-violet { background-position: -210px 0; }
+.extra-marker-circle-pink { background-position: -245px 0; }
+.extra-marker-circle-green { background-position: -280px 0; }
+.extra-marker-circle-white { background-position: -315px 0; }
+.extra-marker-circle-black { background-position: -350px 0; }
+
+/* Square markers */
+.extra-marker-square-red { background-position: 0 -45px; }
+.extra-marker-square-orange { background-position: -35px -45px; }
+.extra-marker-square-yellow { background-position: -70px -45px; }
+.extra-marker-square-blue { background-position: -105px -45px; }
+.extra-marker-square-cyan { background-position: -140px -45px; }
+.extra-marker-square-purple { background-position: -175px -45px; }
+.extra-marker-square-violet { background-position: -210px -45px; }
+.extra-marker-square-pink { background-position: -245px -45px; }
+.extra-marker-square-green { background-position: -280px -45px; }
+.extra-marker-square-white { background-position: -315px -45px; }
+.extra-marker-square-black { background-position: -350px -45px; }
+
+/* Star markers */
+.extra-marker-star-red { background-position: 0 -90px; }
+.extra-marker-star-orange { background-position: -35px -90px; }
+.extra-marker-star-yellow { background-position: -70px -90px; }
+.extra-marker-star-blue { background-position: -105px -90px; }
+.extra-marker-star-cyan { background-position: -140px -90px; }
+.extra-marker-star-purple { background-position: -175px -90px; }
+.extra-marker-star-violet { background-position: -210px -90px; }
+.extra-marker-star-pink { background-position: -245px -90px; }
+.extra-marker-star-green { background-position: -280px -90px; }
+.extra-marker-star-white { background-position: -315px -90px; }
+.extra-marker-star-black { background-position: -350px -90px; }
+
+/* Pentagon markers */
+.extra-marker-penta-red { background-position: 0 -135px; }
+.extra-marker-penta-orange { background-position: -35px -135px; }
+.extra-marker-penta-yellow { background-position: -70px -135px; }
+.extra-marker-penta-blue { background-position: -105px -135px; }
+.extra-marker-penta-cyan { background-position: -140px -135px; }
+.extra-marker-penta-purple { background-position: -175px -135px; }
+.extra-marker-penta-violet { background-position: -210px -135px; }
+.extra-marker-penta-pink { background-position: -245px -135px; }
+.extra-marker-penta-green { background-position: -280px -135px; }
+.extra-marker-penta-white { background-position: -315px -135px; }
+.extra-marker-penta-black { background-position: -350px -135px; }
+
+/* Icon positioning inside marker */
+.extra-marker i {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: white;
+  text-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+/* Retina support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .extra-marker {
+    background-image: url('/common/img/markers_default@2x.png');
+    background-size: 385px 180px;
+  }
+  
+  .extra-marker::before {
+    background-image: url('/common/img/markers_shadow@2x.png');
+    background-size: 36px 16px;
+  }
+}

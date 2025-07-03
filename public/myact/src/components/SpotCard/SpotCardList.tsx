@@ -11,12 +11,7 @@ import {
   Switch,
   Divider,
 } from '@mui/material'
-import {
-  LocationOn as LocationIcon,
-  Person as PersonIcon,
-  RadioButtonChecked as RadioIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material'
+// Material-UI icons replaced with Font Awesome equivalents
 import { useActivationSpots } from '@/hooks/useSOTAAPI'
 import { useMapStore } from '@/stores/mapStore'
 import type { Spot } from '@/types'
@@ -44,34 +39,72 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
-  // Get spot data from API
-  const { data: spotData, isLoading } = useActivationSpots({
-    pat_ref: encodeURIComponent("^(JA|JP-)"),
+  // Get spot data from API (全データを取得、フィルターは内部で実行)
+  const { data: spotData, isLoading, error } = useActivationSpots({
+    // pat_refを削除して全データを取得
     log_id: preferences.pota_hunter_uuid || undefined,
     by_call: showByCall ? true : undefined,
     by_ref: showByCall ? undefined : true,
-    hours_ago: preferences.spot_period,
+    hours_ago: preferences.spot_period || 6,
+  })
+
+  // SpotCardList専用デバッグログ
+  const DEBUG = false // デバッグログ制御
+  if (DEBUG) console.log('SPOT-CARD-LIST - API Data:', {
+    spotData,
+    isLoading,
+    error,
+    spotsCount: spotData?.spots?.length || 0,
+    preferences: { spot_period: preferences.spot_period, pota_hunter_uuid: preferences.pota_hunter_uuid },
+    showByCall
+  })
+
+  // Debug logging
+  if (DEBUG) console.log('SPOT - SpotCardList API Data:', {
+    spotData,
+    isLoading,
+    error,
+    preferences,
+    showByCall
   })
 
   // Process spot data
   const processedSpots = useMemo(() => {
-    if (!spotData || !Array.isArray(spotData)) return []
+    if (DEBUG) console.log('SPOT - Processing spots:', spotData)
+    
+    if (!spotData?.spots || !Array.isArray(spotData.spots)) {
+      if (DEBUG) console.log('SPOT - No spots data or not array:', spotData)
+      return []
+    }
 
     const now = new Date()
-    const processed: ProcessedSpot[] = []
+    const spotMap = new Map<string, ProcessedSpot>() // key: `${activator}-${reference}`
 
-    spotData.forEach((spot: any) => {
+    if (DEBUG) console.log('SPOT - Raw spots count:', spotData.spots.length)
+
+    spotData.spots.forEach((spot: any, index: number) => {
+      if (DEBUG) console.log(`SPOT - Processing spot ${index}:`, spot)
+      
       // Filter by program preferences
       const programMatch =
         (spot.program === 'SOTA' && preferences.sota_ref) ||
         (spot.program === 'POTA' && preferences.pota_ref)
+
+      if (DEBUG) console.log(`SPOT - Program match for ${spot.program}:`, programMatch, {
+        sota_ref: preferences.sota_ref,
+        pota_ref: preferences.pota_ref
+      })
 
       if (!programMatch) return
 
       const spotTime = new Date(spot.spotTime)
       const timeFromNow = (spotTime.getTime() - now.getTime()) / (1000 * 60) // minutes
 
-      processed.push({
+      // Create unique key for deduplication: activator + reference
+      const dedupeKey = `${spot.activator}-${spot.reference}`
+      const existingSpot = spotMap.get(dedupeKey)
+      
+      const currentSpot: ProcessedSpot = {
         spotTime: spot.spotTime,
         activator: spot.activator,
         reference: spot.reference,
@@ -79,15 +112,45 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
         mode: spot.mode,
         comment: spot.comment,
         program: spot.program,
+        referenceDetail: spot.referenceDetail || spot.reference,
+        spotId: spot.spotId || 0,
+        spotter: spot.spotter || '',
         timeFromNow,
         isRecent: Math.abs(timeFromNow) <= 30, // within 30 minutes
         isPast: timeFromNow < 0,
-      })
+      }
+      
+      if (existingSpot) {
+        // Keep the more recent spot (newer spotTime)
+        const existingSpotTime = new Date(existingSpot.spotTime)
+        if (spotTime > existingSpotTime) {
+          if (DEBUG) console.log(`SPOT - Updating existing spot for ${dedupeKey}:`, {
+            old: existingSpot.spotTime,
+            new: spot.spotTime
+          })
+          spotMap.set(dedupeKey, currentSpot)
+        } else {
+          if (DEBUG) console.log(`SPOT - Keeping existing spot for ${dedupeKey} (newer):`, {
+            existing: existingSpot.spotTime,
+            current: spot.spotTime
+          })
+        }
+      } else {
+        // Create new spot entry
+        if (DEBUG) console.log(`SPOT - Creating new spot for ${dedupeKey}`)
+        spotMap.set(dedupeKey, currentSpot)
+      }
     })
 
-    // Sort by time (most recent first)
-    return processed.sort((a, b) => new Date(b.spotTime).getTime() - new Date(a.spotTime).getTime())
-  }, [spotData, preferences])
+    // Convert map to array and sort by time (most recent first)
+    const deduplicatedSpots = Array.from(spotMap.values())
+    if (DEBUG) console.log('SPOT - Deduplicated spots count:', deduplicatedSpots.length)
+
+    const sorted = deduplicatedSpots.sort((a, b) => new Date(b.spotTime).getTime() - new Date(a.spotTime).getTime())
+    if (DEBUG) console.log('SPOT - Final sorted spots:', sorted)
+    
+    return sorted
+  }, [spotData?.spots, preferences])
 
   // Auto-scroll to current time or specific time
   useEffect(() => {
@@ -159,8 +222,21 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
     )
   }
 
+  if (error) {
+    return (
+      <Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+        <Typography color="error" gutterBottom>
+          Error loading spots
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {error.message || 'Unknown error'}
+        </Typography>
+      </Box>
+    )
+  }
+
   return (
-    <Box sx={{ height, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height, display: 'flex', flexDirection: 'column' }} data-testid="spot-card-list">
       {/* Controls */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -205,9 +281,19 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
       >
         {processedSpots.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary">
+            <Typography color="text.secondary" gutterBottom>
               スポットがありません
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Raw spots: {spotData?.spots?.length || 0} | 
+              SOTA enabled: {preferences.sota_ref ? 'Yes' : 'No'} | 
+              POTA enabled: {preferences.pota_ref ? 'Yes' : 'No'}
+            </Typography>
+            {spotData?.spots && spotData.spots.length > 0 && (
+              <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                Data received but filtered out - check program preferences
+              </Typography>
+            )}
           </Box>
         ) : (
           processedSpots.map((spot, index) => (
@@ -221,6 +307,7 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
                 }
               }}
               variant="outlined"
+              data-testid={`spot-card-${spot.program}-${index}`}
               sx={{
                 cursor: onSpotClick ? 'pointer' : 'default',
                 opacity: spot.isPast && !spot.isRecent ? 0.7 : 1,
@@ -230,7 +317,7 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
               }}
               onClick={() => onSpotClick?.(spot)}
             >
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                 {/* Header */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -250,7 +337,7 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
                       variant={spot.isRecent ? 'filled' : 'outlined'}
                     />
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" fontWeight="bold">
                     {formatTime(spot.spotTime)}
                   </Typography>
                 </Box>
@@ -258,21 +345,21 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
                 {/* Main Content */}
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <PersonIcon fontSize="small" color="action" />
+                    <i className="fas fa-user" style={{ fontSize: '16px', color: '#757575' }} />
                     <Typography variant="h6" component="span">
                       {spot.activator}
                     </Typography>
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <LocationIcon fontSize="small" color="action" />
-                    <Typography variant="body1" fontWeight="bold">
+                    <i className="fas fa-map-marker-alt" style={{ fontSize: '16px', color: '#757575' }} />
+                    <Typography variant="body1" fontWeight="bold" data-testid="spot-reference">
                       {spot.reference}
                     </Typography>
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <RadioIcon fontSize="small" color="action" />
+                    <i className="fas fa-broadcast-tower" style={{ fontSize: '16px', color: '#757575' }} />
                     <Typography variant="body1">
                       {spot.frequency} {spot.mode}
                     </Typography>
@@ -289,16 +376,6 @@ const SpotCardList: React.FC<SpotCardListProps> = ({
                   </>
                 )}
 
-                {/* Actions */}
-                {onSpotClick && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                    <Tooltip title="マップで表示">
-                      <IconButton size="small">
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                )}
               </CardContent>
             </Card>
           ))

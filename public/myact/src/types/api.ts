@@ -6,22 +6,29 @@ export interface GeomagneticResponse {
 }
 
 export interface SummitSearchResponse {
+  // Actual API response fields
+  code: string
+  name: string
+  nameJ: string
+  alt: number
+  lon: number
+  lat: number
+  pts: number
+  count: number
+  
+  // Legacy/alternative field names
   summit_code?: string
   summitCode?: string
   summit_name?: string
   summitName?: string
   summit_name_j?: string
   summitNameJ?: string
-  lat?: number
   latitude?: number
-  lon?: number
   longitude?: number
-  alt?: number
   altM?: number
   points?: number
   bonus_points?: number
   bonusPoints?: number
-  count?: number
   activationCount?: number
   activation_date?: string
   activationDate?: string
@@ -33,18 +40,24 @@ export interface SummitSearchResponse {
 }
 
 export interface ParkSearchResponse {
-  pota?: string
-  wwff?: string
-  nameJ?: string
+  // Actual API response fields
+  pota: string
+  wwff: string
+  name: string
+  nameJ: string
+  locid: string[]
+  area: number
+  lon: number
+  lat: number
+  atmpt: number | null
+  act: number | null
+  date: string | null
+  qsos: number | null
+  
+  // Legacy/alternative field names
   name_j?: string
-  lat?: number
   latitude?: number
-  lon?: number
   longitude?: number
-  date?: string
-  locid?: string[]
-  act?: number
-  qsos?: number
   activations?: number
   attempts?: number
 }
@@ -74,15 +87,29 @@ export interface APRSTracksResponse {
   }[]
 }
 
-export interface SpotResponse {
-  spotTime: string
+export interface SpotValue {
   activator: string
-  reference: string
+  activatorName: string | null
+  comment: string
   frequency: string
   mode: string
-  comment: string
   program: 'SOTA' | 'POTA'
-}[]
+  qsos: number | null
+  reference: string
+  referenceDetail: string
+  spotId: number
+  spotTime: string
+  spotter: string
+}
+
+export interface SpotGroup {
+  key: string
+  values: SpotValue[]
+}
+
+export interface SpotResponse {
+  spots: SpotGroup[]
+}
 
 export interface POTALog {
   id: string
@@ -102,4 +129,56 @@ export interface POTALogStats {
   activatorLogs: number
   hunterLogs: number
   recentUploads: POTALog[]
+}
+
+// Reference search response for brief search
+export interface ReferenceSearchCandidate {
+  code: string
+  name: string
+  lat: number
+  lon: number
+  program?: 'SOTA' | 'POTA'
+}
+
+// Full reference search response with detailed information (based on actual API response)
+export interface ReferenceSearchDetailCandidate {
+  code: string
+  name: string
+  nameJ?: string
+  lat: number
+  lon: number
+  program?: 'SOTA' | 'POTA'
+  // SOTA specific fields (actual API field names)
+  alt?: number      // altitude in meters
+  altM?: number     // alias for altitude
+  pts?: number      // points
+  points?: number   // alias for points
+  bonusPts?: number // bonus points
+  bonusPoints?: number // alias for bonus points
+  count?: number    // activation count
+  activationCount?: number // alias for activation count
+  date?: string     // last activation date
+  activationDate?: string // alias for activation date
+  call?: string     // last activation call
+  activationCall?: string // alias for activation call
+  city?: string     // city name (Japanese)
+  cityJ?: string    // alias for city
+  maidenhead?: string
+  // POTA specific fields
+  potaCode?: string
+  wwffCode?: string
+  parkName?: string
+  parkNameJ?: string
+  area?: number
+  activations?: number
+  attempts?: number
+  qsos?: number
+}
+
+export interface ReferenceSearchResponse {
+  candidates: ReferenceSearchCandidate[]
+}
+
+export interface ReferenceSearchDetailResponse {
+  candidates: ReferenceSearchDetailCandidate[]
 }

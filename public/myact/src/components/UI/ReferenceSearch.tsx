@@ -8,7 +8,7 @@ import {
   Paper,
   InputAdornment
 } from '@mui/material'
-import { Search as SearchIcon, LocationOn as LocationIcon } from '@mui/icons-material'
+// Using Open Iconic icons for consistency with original
 import { APIService } from '@/services/api'
 
 interface ReferenceResult {
@@ -101,19 +101,36 @@ export function ReferenceSearch({
     setLoading(true)
     
     try {
-      const response = await APIService.searchReference(searchText) as any
+      const response = await APIService.searchReference(searchText)
       
-      if (response && typeof response.count === 'number') {
-        if (response.count < maxCandidates && Array.isArray(response.candidates)) {
-          const results: ReferenceResult[] = response.candidates.map((candidate: SearchCandidate) => ({
-            code: candidate.code,
-            coord: [candidate.lat, candidate.lon] as [number, number],
-            name: candidate.nameJ || candidate.code,
-            data: candidate
-          }))
-          
+      if (response) {
+        // Anti-Corruption Layer transforms data to { summits: Summit[], parks: Park[] }
+        const results: ReferenceResult[] = []
+        
+        // Process summits
+        response.summits.forEach(summit => {
+          results.push({
+            code: summit.summitCode,
+            coord: [summit.latitude, summit.longitude] as [number, number],
+            name: summit.summitNameJ || summit.summitName,
+            data: { ...summit, type: 'summit' }
+          })
+        })
+        
+        // Process parks
+        response.parks.forEach(park => {
+          results.push({
+            code: park.potaCode,
+            coord: [park.latitude, park.longitude] as [number, number],
+            name: park.parkNameJ,
+            data: { ...park, type: 'park' }
+          })
+        })
+        
+        // Limit candidates
+        if (results.length < maxCandidates) {
           setCandidates(results)
-        } else if (response.count >= maxCandidates) {
+        } else {
           // 候補が多すぎる場合
           setCandidates([])
         }
@@ -189,7 +206,7 @@ export function ReferenceSearch({
   const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: ReferenceResult) => (
     <Box component="li" {...props}>
       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-        <LocationIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 18 }} />
+        <i className="fas fa-map-marker-alt" style={{ color: '#757575', marginRight: '8px', fontSize: '18px' }} />
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
             {option.code}
@@ -220,7 +237,7 @@ export function ReferenceSearch({
         ...params.InputProps,
         startAdornment: (
           <InputAdornment position="start">
-            <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+            <i className="oi oi-magnifying-glass" style={{ color: 'gray', fontSize: '16px' }} />
           </InputAdornment>
         )
       }}

@@ -47,9 +47,11 @@ case $ACTION in
     FINAL_CHECK=$(ps aux | grep -E "(npm run dev|vite)" | grep -v grep | wc -l)
     if [ "$FINAL_CHECK" -eq 0 ]; then
         echo "✅ サーバー停止完了"
+        exit 0
     else
         echo "❌ 一部プロセスが残っています:"
         ps aux | grep -E "(npm run dev|vite)" | grep -v grep
+        exit 1
     fi
     ;;
     
@@ -96,7 +98,7 @@ case $ACTION in
         if [ "$HTTP_STATUS" = "200" ]; then
             echo "✅ サーバー正常起動 (HTTP $HTTP_STATUS)"
             echo "URL: $SERVER_URL"
-            break
+            exit 0
         else
             echo "待機中... (試行 $i/$RETRIES, HTTP $HTTP_STATUS)"
             sleep $WAIT_TIME
@@ -108,13 +110,32 @@ case $ACTION in
             exit 1
         fi
     done
+    exit 0
     ;;
     
   "restart")
     echo "=== サーバー再起動 ==="
+    
+    # 停止処理実行
     $0 stop
+    STOP_RESULT=$?
+    if [ $STOP_RESULT -ne 0 ]; then
+        echo "❌ サーバー停止に失敗しました"
+        exit $STOP_RESULT
+    fi
+    
     sleep 2
+    
+    # 起動処理実行
     $0 start $FAST_MODE
+    START_RESULT=$?
+    if [ $START_RESULT -eq 0 ]; then
+        echo "✅ サーバー再起動完了"
+        exit 0
+    else
+        echo "❌ サーバー起動に失敗しました"
+        exit $START_RESULT
+    fi
     ;;
     
   "status")

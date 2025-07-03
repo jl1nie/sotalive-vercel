@@ -19,13 +19,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material'
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Schedule as ScheduleIcon,
-  LocationOn as LocationIcon,
-} from '@mui/icons-material'
+// Material-UI icons replaced with Font Awesome equivalents
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -195,13 +189,13 @@ const AlertManager: React.FC<AlertManagerProps> = ({
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ScheduleIcon />
+              <i className="fas fa-calendar" style={{ fontSize: '18px' }} />
               運用アラート
             </Typography>
             <Button
               variant="contained"
               size="small"
-              startIcon={<AddIcon />}
+              startIcon={<i className="fas fa-plus" style={{ fontSize: '16px' }} />}
               onClick={() => handleOpenDialog()}
             >
               追加
@@ -266,7 +260,7 @@ const AlertManager: React.FC<AlertManagerProps> = ({
                               </Typography>
                               
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <LocationIcon fontSize="small" color="action" />
+                                <i className="fas fa-map-marker-alt" style={{ fontSize: '16px', color: '#757575' }} />
                                 <Typography variant="body2">
                                   {alert.reference}
                                 </Typography>
@@ -297,7 +291,7 @@ const AlertManager: React.FC<AlertManagerProps> = ({
                                     handleOpenDialog(alert)
                                   }}
                                 >
-                                  <EditIcon fontSize="small" />
+                                  <i className="fas fa-edit" style={{ fontSize: '16px' }} />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="削除">
@@ -308,7 +302,7 @@ const AlertManager: React.FC<AlertManagerProps> = ({
                                     onDeleteAlert(alert.id)
                                   }}
                                 >
-                                  <DeleteIcon fontSize="small" />
+                                  <i className="fas fa-trash" style={{ fontSize: '16px' }} />
                                 </IconButton>
                               </Tooltip>
                             </Box>

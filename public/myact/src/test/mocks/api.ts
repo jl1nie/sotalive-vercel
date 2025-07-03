@@ -40,6 +40,9 @@ export const mockSpot: Spot = {
   mode: 'SSB',
   comment: 'QRV from test summit',
   program: 'SOTA',
+  referenceDetail: 'Test Summit',
+  spotId: 1,
+  spotter: 'JA1XYZ',
 }
 
 export const mockGeocodingResult = {

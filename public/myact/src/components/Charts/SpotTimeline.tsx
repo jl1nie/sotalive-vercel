@@ -39,24 +39,33 @@ const SpotTimeline: React.FC<SpotTimelineProps> = ({
   const { preferences } = useMapStore()
   const [showByCall, setShowByCall] = useState(false)
   
-  // Get spot data from API
-  const { data: spotData, isLoading } = useActivationSpots({
-    pat_ref: encodeURIComponent("^(JA|JP-)"),
+  // Get spot data from API (全データを取得、フィルターは内部で実行)
+  const { data: spotData, isLoading, error } = useActivationSpots({
+    // pat_refを削除して全データを取得
     log_id: preferences.pota_hunter_uuid || undefined,
     by_call: showByCall ? true : undefined,
     by_ref: showByCall ? undefined : true,
     hours_ago: preferences.spot_period,
   })
 
+  // Debug logging
+  console.log('TIMELINE - SpotTimeline API Data:', {
+    spotData,
+    isLoading,
+    error,
+    preferences,
+    showByCall
+  })
+
   // Process spot data for chart
   const chartData = useMemo(() => {
-    if (!spotData || !Array.isArray(spotData)) return []
+    if (!spotData?.spots || !Array.isArray(spotData.spots)) return []
     
     const processedData: ChartDataPoint[] = []
     let yIndex = 0
     
     // Group spots by reference or call
-    const groupedSpots = spotData.reduce((groups: any, spot: any) => {
+    const groupedSpots = spotData.spots.reduce((groups: any, spot: any) => {
       const key = showByCall ? spot.activator : spot.reference
       if (!groups[key]) {
         groups[key] = []
@@ -99,7 +108,7 @@ const SpotTimeline: React.FC<SpotTimelineProps> = ({
     })
 
     return processedData.sort((a, b) => a.time.getTime() - b.time.getTime())
-  }, [spotData, showByCall, preferences])
+  }, [spotData?.spots, showByCall, preferences])
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
@@ -146,6 +155,9 @@ const SpotTimeline: React.FC<SpotTimelineProps> = ({
         mode: data.mode,
         comment: data.comment,
         program: data.program,
+        referenceDetail: data.reference,
+        spotId: 0,
+        spotter: '',
       }
       onSpotClick(spot)
     }

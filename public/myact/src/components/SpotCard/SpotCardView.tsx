@@ -5,10 +5,7 @@ import {
   ToggleButtonGroup,
   Paper,
 } from '@mui/material'
-import {
-  Timeline as TimelineIcon,
-  ViewList as CardIcon,
-} from '@mui/icons-material'
+// Material-UI icons replaced with Font Awesome equivalents
 import SpotTimeline from '@/components/Charts/SpotTimeline'
 import SpotCardList from './SpotCardList'
 import { useMapStore } from '@/stores/mapStore'
@@ -53,11 +50,11 @@ const SpotCardView: React.FC<SpotCardViewProps> = ({
           sx={{ width: '100%' }}
         >
           <ToggleButton value="cards" sx={{ flex: 1 }}>
-            <CardIcon sx={{ mr: 1 }} />
+            <i className="fas fa-list" style={{ fontSize: '16px', marginRight: '8px' }} />
             カード表示
           </ToggleButton>
           <ToggleButton value="timeline" sx={{ flex: 1 }}>
-            <TimelineIcon sx={{ mr: 1 }} />
+            <i className="fas fa-chart-line" style={{ fontSize: '16px', marginRight: '8px' }} />
             タイムライン
           </ToggleButton>
         </ToggleButtonGroup>

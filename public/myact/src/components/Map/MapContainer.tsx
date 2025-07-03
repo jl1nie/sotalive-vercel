@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
+import type { OperationAlert } from '@/types'
 
 // Dynamic import for SSR compatibility
 const DynamicMap = React.lazy(() => import('./LeafletMap'))
 
-const MapContainer: React.FC = () => {
+interface MapContainerProps {
+  selectedAlert?: OperationAlert | null
+  sidePanelVisible?: boolean
+}
+
+const MapContainer: React.FC<MapContainerProps> = ({ selectedAlert, sidePanelVisible }) => {
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -27,7 +33,7 @@ const MapContainer: React.FC = () => {
   }
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
+    <Box sx={{ height: '100%', width: '100%' }} data-testid="map-container">
       <React.Suspense 
         fallback={
           <Box 
@@ -42,7 +48,7 @@ const MapContainer: React.FC = () => {
           </Box>
         }
       >
-        <DynamicMap />
+        <DynamicMap selectedAlert={selectedAlert} sidePanelVisible={sidePanelVisible} />
       </React.Suspense>
     </Box>
   )

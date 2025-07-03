@@ -30,6 +30,46 @@ html, body {
   font-family: inherit;
 }
 
+/* Summit Marker Tooltip Styles (レガシー実装と同じ) */
+.my-tooltip-label {
+  color: white !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 8px !important;
+  font-weight: bold !important;
+  pointer-events: none !important;
+  text-align: center !important;
+}
+
+/* Custom Park Marker Styles */
+.custom-park-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Summit Marker Z-Index Priority */
+.leaflet-interactive[fill] {
+  z-index: 1000 !important;
+}
+
+/* Ensure summit markers are above TopoJSON layers */
+.leaflet-overlay-pane svg .leaflet-interactive:not([stroke]) {
+  z-index: 999 !important;
+}
+
+.leaflet-overlay-pane svg .leaflet-interactive[fill] {
+  z-index: 1000 !important;
+}
+
+.custom-park-marker div:first-child {
+  transition: transform 0.2s ease-in-out;
+}
+
+.custom-park-marker:hover div:first-child {
+  transform: scale(1.1);
+}
+
 /* Map Container Styles */
 .map-container {
   height: 100%;
@@ -50,13 +90,13 @@ html, body {
   }
 }
 
-/* Custom Tooltip Styles */
-.my-tooltip-label {
-  color: white;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  font-size: 8px;
+/* Summit marker tooltips - ensure high z-index for visibility */
+.leaflet-tooltip {
+  z-index: 1001 !important;
+}
+
+.my-tooltip-label:before {
+  display: none;
 }
 
 /* Loading Spinner */

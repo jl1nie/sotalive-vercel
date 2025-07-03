@@ -17,14 +17,7 @@ import {
   Alert,
   LinearProgress,
 } from '@mui/material'
-import {
-  Upload as UploadIcon,
-  Download as DownloadIcon,
-  Delete as DeleteIcon,
-  Share as ShareIcon,
-  GetApp as ImportIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material'
+// Material-UI icons replaced with Font Awesome equivalents
 import type { POTALog, POTALogStats } from '@/types/api'
 import { useMapStore } from '@/stores/mapStore'
 import { 
@@ -187,7 +180,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
               <Box>
                 <Tooltip title="ダウンロード">
                   <IconButton size="small" onClick={() => handleDownload(log)}>
-                    <DownloadIcon fontSize="small" />
+                    <i className="fas fa-download" style={{ fontSize: '16px' }} />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="削除">
@@ -196,7 +189,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
                     onClick={() => handleDelete(log.id)}
                     disabled={deleteMutation.isPending}
                   >
-                    <DeleteIcon fontSize="small" />
+                    <i className="fas fa-trash" style={{ fontSize: '16px' }} />
                   </IconButton>
                 </Tooltip>
               </Box>
@@ -217,14 +210,14 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
         <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
-            startIcon={<UploadIcon />}
+            startIcon={<i className="fas fa-upload" style={{ fontSize: '16px' }} />}
             onClick={() => setUploadDialogOpen(true)}
           >
             アップロード
           </Button>
           <Button
             variant="outlined"
-            startIcon={<ShareIcon />}
+            startIcon={<i className="fas fa-share" style={{ fontSize: '16px' }} />}
             onClick={handleShare}
             disabled={shareMutation.isPending}
           >
@@ -232,7 +225,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
           </Button>
           <Button
             variant="outlined"
-            startIcon={<ImportIcon />}
+            startIcon={<i className="fas fa-download" style={{ fontSize: '16px' }} />}
             onClick={() => setImportDialogOpen(true)}
           >
             インポート
@@ -270,7 +263,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
                 onClick={() => activatorLogQuery.refetch()}
                 disabled={activatorLogQuery.isFetching}
               >
-                <RefreshIcon />
+                <i className="fas fa-sync" style={{ fontSize: '16px' }} />
               </IconButton>
             </Box>
 
@@ -300,7 +293,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
                 onClick={() => hunterLogQuery.refetch()}
                 disabled={hunterLogQuery.isFetching}
               >
-                <RefreshIcon />
+                <i className="fas fa-sync" style={{ fontSize: '16px' }} />
               </IconButton>
             </Box>
 
@@ -330,7 +323,7 @@ const POTALogManager: React.FC<POTALogManagerProps> = ({ onClose: _onClose }) =>
             <Button
               variant="outlined"
               component="label"
-              startIcon={<UploadIcon />}
+              startIcon={<i className="fas fa-upload" style={{ fontSize: '16px' }} />}
               fullWidth
             >
               ファイルを選択

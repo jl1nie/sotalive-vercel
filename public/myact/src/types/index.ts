@@ -28,22 +28,36 @@ export interface Park {
   parkNameJ: string
   latitude: number
   longitude: number
-  date?: string
+  date?: string | null
   locid?: string[]
-  act?: number
-  qsos?: number
+  act?: number | null
+  qsos?: number | null
   activations?: number
   attempts?: number
 }
 
-export interface Spot {
-  spotTime: string
+
+// API Alert types (from /activation/alerts)
+export interface SotaAlert {
+  key: string
+  values: SotaAlertValue[]
+}
+
+export interface SotaAlertValue {
   activator: string
+  activator_name: string | null
+  alert_id: number
+  comment: string | null
+  end_time: string | null
+  frequencies: string
+  location: string
+  operator: string
+  poster: string | null
+  program: string
   reference: string
-  frequency: string
-  mode: string
-  comment: string
-  program: 'SOTA' | 'POTA'
+  reference_detail: string
+  start_time: string
+  user_id: number
 }
 
 export interface Alert {
@@ -66,6 +80,36 @@ export interface OperationAlert {
   comment?: string
   callsign: string
   createdAt: string
+  // Additional fields from API alerts
+  frequencies?: string
+  location?: string
+  endDate?: string
+}
+
+export interface Spot {
+  activator: string
+  activatorName?: string | null
+  comment: string
+  frequency: string
+  mode: string
+  program: 'SOTA' | 'POTA'
+  qsos?: number | null
+  reference: string
+  referenceDetail?: string
+  spotId?: number
+  spotTime: string
+  spotter?: string
+  // Legacy/alternative field names for compatibility
+  activator_call?: string
+  activatorCall?: string
+  summit_code?: string
+  summitCode?: string
+  park_code?: string
+  parkCode?: string
+  time_string?: string
+  timeString?: string
+  time?: string
+  comments?: string
 }
 
 export interface Preferences {
@@ -105,6 +149,12 @@ export interface Preferences {
   enable_wifi: boolean
   enable_serial: boolean
   my_callsign: string
+  // Alert/Spot display filter settings
+  alert_spot_type_filter: 'all' | 'alerts' | 'spots' | 'active'
+  alert_spot_program_filter: 'all' | 'sota' | 'pota'
+  alert_spot_sort_mode: 'time-desc' | 'time-asc' | 'type' | 'program'
+  alert_spot_region_filter: 'worldwide' | 'japan'
+  alert_spot_show_by_call: boolean
 }
 
 export interface GeocodingResult {
@@ -181,5 +231,5 @@ export interface ReferenceSearchResult {
   lat: number
   lon: number
   type: 'sota' | 'pota' | 'wwff' | 'coordinate'
-  data?: any
+  data?: Summit | Park | LatLng | null
 }

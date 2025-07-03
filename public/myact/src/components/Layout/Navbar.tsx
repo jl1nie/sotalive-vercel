@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   AppBar,
   Toolbar,
@@ -7,16 +7,16 @@ import {
   Box,
   CircularProgress,
 } from '@mui/material'
-import {
-  LocationOn as LocationIcon,
-  Satellite as SatelliteIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material'
+// Using Font Awesome and Open Iconic icons for consistency with original
 import Clock from '../UI/Clock'
 import { useGPS } from '@/hooks/useGPS'
+import TimelineDialog from '../Dialogs/TimelineDialog'
+import SettingsDialog from '../Dialogs/SettingsDialog'
 
 const Navbar: React.FC = () => {
   const { isLoading, getCurrentPosition } = useGPS()
+  const [timelineDialogOpen, setTimelineDialogOpen] = useState(false)
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
   // Store methods are handled in useGPS hook
 
   const handleQTHClick = async () => {
@@ -29,13 +29,11 @@ const Navbar: React.FC = () => {
   }
 
   const handleSpotsClick = () => {
-    // TODO: Implement spots modal
-    console.log('Spots button clicked')
+    setTimelineDialogOpen(true)
   }
 
   const handleSettingsClick = () => {
-    // TODO: Implement settings modal
-    console.log('Settings button clicked')
+    setSettingsDialogOpen(true)
   }
 
   return (
@@ -66,7 +64,7 @@ const Navbar: React.FC = () => {
             '&:disabled': { bgcolor: '#f0f0f0' }
           }}
         >
-          {isLoading ? <CircularProgress size={20} /> : <LocationIcon />}
+          {isLoading ? <CircularProgress size={20} /> : <i className="fas fa-map-marked-alt" style={{ fontSize: '18px' }} />}
         </IconButton>
         
         <IconButton
@@ -79,7 +77,7 @@ const Navbar: React.FC = () => {
             '&:hover': { bgcolor: '#138496' }
           }}
         >
-          <SatelliteIcon />
+          <i className="fas fa-satellite-dish" style={{ fontSize: '18px' }} />
         </IconButton>
         
         <IconButton
@@ -92,13 +90,23 @@ const Navbar: React.FC = () => {
             '&:hover': { bgcolor: '#0056b3' }
           }}
         >
-          <SettingsIcon />
+          <i className="oi oi-cog" style={{ fontSize: '18px' }} />
         </IconButton>
 
         <Box sx={{ flexGrow: 1 }} />
         
         <Clock />
       </Toolbar>
+      
+      {/* Dialog components */}
+      <TimelineDialog 
+        open={timelineDialogOpen} 
+        onClose={() => setTimelineDialogOpen(false)} 
+      />
+      <SettingsDialog 
+        open={settingsDialogOpen} 
+        onClose={() => setSettingsDialogOpen(false)} 
+      />
     </AppBar>
   )
 }

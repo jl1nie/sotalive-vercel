@@ -1,12 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, LayersControl, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, LayersControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Box } from '@mui/material'
 import { useMapStore } from '@/stores/mapStore'
-import { APIService } from '@/services/api'
 import MapDataLoader from './MapDataLoader'
+import MapEvents from './MapEvents'
 import { useReverseGeocoder } from '@/hooks/useReverseGeocoder'
+import { usePopupManager } from '@/hooks/usePopupManager'
+import { useMapInitialization } from '@/hooks/useMapInitialization'
+import { useMapEventLoop } from '@/hooks/useMapEventLoop'
+// useMarkerClickHandlers removed - markers handle events directly
+import { useSidePanelIntegration } from '@/hooks/useSidePanelIntegration'
 import SummitMarker from '../Markers/SummitMarker'
 import ParkMarker from '../Markers/ParkMarker'
 import QTHMarker from '../Markers/QTHMarker'
@@ -15,7 +20,7 @@ import APRSLayer from './APRSLayer'
 import InfoPopup from './InfoPopup'
 import MapDebugInfo from '../Debug/MapDebugInfo'
 import APITestButton from '../Debug/APITestButton'
-import type { Summit, Park, LatLng, OperationAlert } from '@/types'
+import type { OperationAlert } from '@/types'
 import { debugLog } from '@/config/debugConfig'
 
 // Fix for default markers in React Leaflet
@@ -33,15 +38,14 @@ interface LeafletMapProps {
 
 const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible }) => {
   const mapRef = useRef<L.Map | null>(null)
-  const [popupInfo, setPopupInfo] = useState<{
-    position: LatLng
-    summit?: Summit
-    park?: Park
-    isGPS?: boolean
-  } | null>(null)
   
-  // 地図完全初期化状態の管理
-  const [mapFullyInitialized, setMapFullyInitialized] = useState(false)
+  // Custom hooks for managing complex state and behavior
+  const { popupInfo, setUniquePopup, clearPopup } = usePopupManager()
+  const { mapFullyInitialized } = useMapInitialization(mapRef.current)
+  const { isProgrammaticMove, isUserInteraction, startProgrammaticMove, debounceStateUpdate } = useMapEventLoop()
+  
+  // Side panel integration
+  useSidePanelIntegration(mapRef, sidePanelVisible)
   
   // popupInfo状態変化の監視
   useEffect(() => {
@@ -66,18 +70,41 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
   // Get marker data from store
   const { summits, parks } = useMapStore()
   
+  // Get geocoding info for popup position using the correct hook
+  const { reverseGeocode } = useReverseGeocoder()
+  const [geocodingInfo, setGeocodingInfo] = useState<{
+    errors?: string
+    prefecture?: string
+    municipality?: string
+    address?: string
+    jccCode?: string
+    jccText?: string
+    wardCode?: string | null
+    jcgCode?: string | null
+    hamlogCode?: string
+    maidenhead?: string
+    elevation?: string
+    hsrc?: string
+    mapcode?: string
+  } | null>(null)
+  
+  // Popup close handler (must be outside JSX to follow Rules of Hooks)
+  const handlePopupClose = useCallback(() => {
+    debugLog.event('Popup closed by user')
+    clearPopup()
+    setGeocodingInfo(null)
+  }, [clearPopup, setGeocodingInfo])
+  
   // デバッグ情報
   debugLog.leafletMap('Rendering with preferences.sota_ref:', preferences.sota_ref)
   debugLog.leafletMap('summits.length:', summits.length)
   debugLog.leafletMap('parks.length:', parks.length)
   debugLog.leafletMap('First 3 summits:', summits.slice(0, 3))
-
-  // Get geocoding info for popup position using the correct hook
-  const { reverseGeocode } = useReverseGeocoder()
-  const [geocodingInfo, setGeocodingInfo] = React.useState<any>(null)
+  
+  // Marker click handlers removed - markers handle clicks directly through mapStore
   
   // Get geocoding info when popup position changes (for map clicks only, not for marker clicks)
-  React.useEffect(() => {
+  useEffect(() => {
     if (popupInfo && !popupInfo.summit && !popupInfo.park && !popupInfo.isGPS) {
       // 地図クリック専用のgeocoding処理（マーカークリック時は実行しない）
       const fetchGeocodingInfo = async () => {
@@ -88,7 +115,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
             popupInfo.position.lng, 
             true
           )
-          setGeocodingInfo(result)
+          setGeocodingInfo(result ? { ...result, maidenhead: result.maidenhead || undefined } : null)
           debugLog.event('Geocoding result received for map click:', result)
         } catch (error) {
           console.error('Geocoding error:', error)
@@ -103,6 +130,34 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
   }, [popupInfo, reverseGeocode])
 
   const leafletCenter: [number, number] = [mapCenter.lat, mapCenter.lng]
+
+  // Sync mapStore state changes with Leaflet map
+  useEffect(() => {
+    if (mapRef.current) {
+      const currentCenter = mapRef.current.getCenter()
+      const currentZoom = mapRef.current.getZoom()
+      
+      // Check if center or zoom needs updating (avoid unnecessary moves)
+      const centerChanged = Math.abs(currentCenter.lat - mapCenter.lat) > 0.0001 || 
+                          Math.abs(currentCenter.lng - mapCenter.lng) > 0.0001
+      const zoomChanged = Math.abs(currentZoom - zoom) > 0.1
+      
+      if (centerChanged || zoomChanged) {
+        debugLog.leafletMap('Syncing mapStore state to Leaflet map:', {
+          from: { center: currentCenter, zoom: currentZoom },
+          to: { center: mapCenter, zoom },
+          centerChanged,
+          zoomChanged
+        })
+        
+        // Use setView to update both center and zoom with animation
+        mapRef.current.setView([mapCenter.lat, mapCenter.lng], zoom, {
+          animate: true,
+          duration: 1.0 // 1 second animation
+        })
+      }
+    }
+  }, [mapCenter.lat, mapCenter.lng, zoom]) // React to mapStore changes
 
   useEffect(() => {
     // Any map initialization logic can go here
@@ -139,502 +194,35 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
     }
   }, [sidePanelVisible])
 
-  // Update map view when mapCenter or zoom changes from store
+  // Map center/zoom sync handled by mapStore and useMapEventLoop hook
+
+  // Map initialization handled by useMapInitialization hook
+
+  // Map event handling delegated to separate MapEvents component
+
+  // Marker click handlers from centralized hook (removed duplicate implementation)
+  // Now all click handling logic is centralized in mapStore
+
+  // Park and QTH click handlers removed (now handled by centralized hook)
+
+  // All click handlers removed - now using centralized useMarkerClickHandlers hook
+
+  // Component cleanup handled by individual hooks
+
+  // MapContainer の data-testid 属性を手動で追加（React-Leafletがサポートしていないため）
   useEffect(() => {
-    if (mapRef.current) {
-      const map = mapRef.current
-      const currentCenter = map.getCenter()
-      const currentZoom = map.getZoom()
-      
-      // Check if we need to update the map position
-      const centerChanged = Math.abs(currentCenter.lat - mapCenter.lat) > 0.001 || 
-                           Math.abs(currentCenter.lng - mapCenter.lng) > 0.001
-      const zoomChanged = currentZoom !== zoom
-      
-      if (centerChanged || zoomChanged) {
-        debugLog.leafletMap('Updating map view from store:', {
-          from: { lat: currentCenter.lat, lng: currentCenter.lng, zoom: currentZoom },
-          to: { lat: mapCenter.lat, lng: mapCenter.lng, zoom }
-        })
-        
-        map.setView([mapCenter.lat, mapCenter.lng], zoom, {
-          animate: true,
-          duration: 1.0 // Smooth animation over 1 second
-        })
-      }
-    }
-  }, [mapCenter, zoom])
-
-  // 地図完全初期化の監視
-  useEffect(() => {
-    if (mapRef.current) {
-      const map = mapRef.current
-      
-      const checkMapInitialization = () => {
-        try {
-          // 地図の基本機能が利用可能かチェック
-          const center = map.getCenter()
-          const size = map.getSize()
-          const zoom = map.getZoom()
-          const bounds = map.getBounds()
-          
-          // 座標変換機能のテスト
-          const testPoint = map.latLngToContainerPoint([35.6762, 139.6503])
-          
-          // 地図コンテナのサイズが確定しているかチェック
-          const container = map.getContainer()
-          const containerSize = container.offsetWidth * container.offsetHeight
-          
-          // 条件: 全ての値が有効で、座標変換が正常、コンテナサイズが確定
-          const isFullyReady = center && size && zoom && bounds && 
-                               testPoint && testPoint.x > 0 && testPoint.y > 0 &&
-                               containerSize > 0
-          
-          if (isFullyReady && !mapFullyInitialized) {
-            debugLog.leafletMap('Map fully initialized:', {
-              center: { lat: center.lat, lng: center.lng },
-              size: { x: size.x, y: size.y },
-              zoom,
-              containerSize,
-              testPoint: { x: testPoint.x, y: testPoint.y }
-            })
-            setMapFullyInitialized(true)
-          }
-        } catch (error) {
-          debugLog.leafletMap('Map initialization check failed:', error)
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        const container = mapRef.current.getContainer()
+        if (container && !container.hasAttribute('data-testid')) {
+          container.setAttribute('data-testid', 'leaflet-map')
+          debugLog.leafletMap('MapContainer: data-testid attribute added manually')
         }
       }
-      
-      // 複数のイベントで初期化状態をチェック
-      map.on('load', checkMapInitialization)
-      map.on('moveend', checkMapInitialization)
-      map.on('zoomend', checkMapInitialization)
-      map.on('resize', checkMapInitialization)
-      
-      // 定期チェック（リロード直後の初期化用）
-      const initCheckInterval = setInterval(checkMapInitialization, 200)
-      
-      // 最大5秒で初期化を強制完了
-      const forceInitTimeout = setTimeout(() => {
-        debugLog.leafletMap('Forcing map initialization completion after 5s')
-        setMapFullyInitialized(true)
-        clearInterval(initCheckInterval)
-      }, 5000)
-      
-      // 初回チェック
-      setTimeout(checkMapInitialization, 100)
-      
-      return () => {
-        map.off('load', checkMapInitialization)
-        map.off('moveend', checkMapInitialization)
-        map.off('zoomend', checkMapInitialization)
-        map.off('resize', checkMapInitialization)
-        clearInterval(initCheckInterval)
-        clearTimeout(forceInitTimeout)
-      }
-    }
-  }, [mapRef.current, mapFullyInitialized])
-
-  // Component to handle map events
-  const MapEvents = () => {
-    const map = useMapEvents({
-      click: (e) => {
-        debugLog.event('Map click detected at', e.latlng.lat, e.latlng.lng)
-        debugLog.event('Original event target:', e.originalEvent?.target)
-        
-        // マーカークリックイベントと地図クリックを確実に分離
-        // originalEventのtargetがマーカー要素の場合はスキップ
-        if (e.originalEvent?.target) {
-          const target = e.originalEvent.target as HTMLElement
-          debugLog.event('Target element:', target.tagName, target.className)
-          
-          // より幅広いマーカー要素を検出（CircleMarker, SVG要素, パス要素含む）
-          if (target.classList?.contains('leaflet-interactive') || 
-              target.closest('.leaflet-interactive') ||
-              target.tagName === 'path' ||
-              target.tagName === 'circle' ||
-              target.closest('svg') ||
-              target.closest('.leaflet-marker-icon') ||
-              target.closest('.leaflet-marker-shadow') ||
-              // CircleMarkerはpathタグでレンダリングされるため追加検出
-              (target.tagName === 'path' && target.closest('.leaflet-overlay-pane'))) {
-            debugLog.event('Skipping map click (marker/interactive element detected)')
-            return
-          }
-        }
-        
-        debugLog.event('Processing as map click (not marker)')
-        debugLog.event('Map initialization status:', mapFullyInitialized)
-        
-        // 地図初期化未完了時の安全対策
-        if (!mapFullyInitialized) {
-          debugLog.event('Map not fully initialized, applying safety measures')
-          
-          // 地図サイズと座標変換の強制再計算
-          if (mapRef.current) {
-            try {
-              mapRef.current.invalidateSize({ pan: false, debounceMoveend: true })
-              
-              // 座標変換テスト
-              const testPoint = mapRef.current.latLngToContainerPoint([e.latlng.lat, e.latlng.lng])
-              debugLog.event('Coordinate conversion test:', testPoint)
-              
-              // 異常な座標変換結果の場合は処理を遅延
-              if (!testPoint || testPoint.x <= 0 || testPoint.y <= 0 || 
-                  testPoint.x > 10000 || testPoint.y > 10000) {
-                debugLog.event('Abnormal coordinate conversion, delaying popup')
-                
-                // 500ms後に再試行
-                setTimeout(() => {
-                  debugLog.event('Retrying map click after coordinate stabilization')
-                  if (mapRef.current) {
-                    mapRef.current.invalidateSize()
-                    
-                    // 再度ポップアップ表示（安全な状態で）
-                    const retryPosition: LatLng = { lat: e.latlng.lat, lng: e.latlng.lng }
-                    setPopupInfo(null)
-                    setTimeout(() => {
-                      setPopupInfo({
-                        position: retryPosition,
-                        summit: undefined,
-                        park: undefined,
-                        isGPS: false
-                      })
-                    }, 10)
-                  }
-                }, 500)
-                return
-              }
-            } catch (error) {
-              debugLog.event('Error in safety measures:', error)
-            }
-          }
-        }
-        
-        debugLog.leafletMap('Setting map click popup (no summit/park info)')
-        const position: LatLng = {
-          lat: e.latlng.lat,
-          lng: e.latlng.lng
-        }
-        
-        // 前のポップアップをクリア（2重ポップアップ防止）
-        setPopupInfo(null)
-        
-        // 地図初期化完了時は通常処理、未完了時は少し長めの遅延
-        const delay = mapFullyInitialized ? 10 : 100
-        setTimeout(() => {
-          setPopupInfo({ 
-            position,
-            summit: undefined, // 明示的にsummit情報を除外
-            park: undefined, // 明示的にpark情報を除外
-            isGPS: false
-          })
-          debugLog.event(`Map click popup set after ${delay}ms delay (initialized: ${mapFullyInitialized})`)
-        }, delay)
-      },
-      moveend: (e) => {
-        const map = e.target
-        const center = map.getCenter()
-        const newZoom = map.getZoom()
-        const bounds = map.getBounds()
-        
-        debugLog.event('Map moved to:', {
-          center: { lat: center.lat, lng: center.lng },
-          zoom: newZoom,
-          bounds: {
-            min_lat: bounds.getSouth(),
-            max_lat: bounds.getNorth(),
-            min_lon: bounds.getWest(),
-            max_lon: bounds.getEast()
-          }
-        })
-        
-        // 状態更新を最小限に抑制
-        const currentCenter = mapCenter
-        const centerChanged = Math.abs(currentCenter.lat - center.lat) > 0.001 || 
-                             Math.abs(currentCenter.lng - center.lng) > 0.001
-        const zoomChanged = zoom !== newZoom
-        
-        if (centerChanged) {
-          setMapCenter({ lat: center.lat, lng: center.lng })
-        }
-        if (zoomChanged) {
-          setZoom(newZoom)
-        }
-      },
-      zoomend: (e) => {
-        const map = e.target
-        const center = map.getCenter()
-        const newZoom = map.getZoom()
-        
-        const bounds = map.getBounds()
-        debugLog.event('Zoom changed to:', newZoom, 'bounds:', {
-          min_lat: bounds.getSouth(),
-          max_lat: bounds.getNorth(),
-          min_lon: bounds.getWest(),
-          max_lon: bounds.getEast()
-        })
-        
-        // ズーム変更時のみ状態更新
-        if (zoom !== newZoom) {
-          setZoom(newZoom)
-          setMapCenter({ lat: center.lat, lng: center.lng })
-        }
-      }
-    })
+    }, 1000) // 1秒後に実行（地図初期化完了待ち）
     
-    // Store map reference for external access
-    useEffect(() => {
-      mapRef.current = map
-    }, [map])
-    
-    return null
-  }
-
-  const handleSummitClick = React.useCallback(async (summit: Summit, latlng: any) => {
-    debugLog.event('handleSummitClick called for summit:', summit.summitCode, 'at', summit.latitude, summit.longitude)
-    debugLog.event('handleSummitClick: summit data:', summit)
-    debugLog.event('handleSummitClick: map initialization status:', mapFullyInitialized)
-    
-    // 地図初期化未完了時の安全対策
-    if (!mapFullyInitialized && mapRef.current) {
-      debugLog.event('Summit click during map initialization, applying safety measures')
-      try {
-        mapRef.current.invalidateSize({ pan: false, debounceMoveend: true })
-        
-        // 座標変換テスト
-        const testPoint = mapRef.current.latLngToContainerPoint([summit.latitude, summit.longitude])
-        debugLog.event('Summit coordinate conversion test:', testPoint)
-        
-        // 異常な座標変換結果の場合は処理を遅延
-        if (!testPoint || testPoint.x <= 0 || testPoint.y <= 0 || 
-            testPoint.x > 10000 || testPoint.y > 10000) {
-          debugLog.event('Abnormal summit coordinate conversion, delaying popup')
-          
-          // 300ms後に再試行
-          setTimeout(() => {
-            debugLog.event('Retrying summit click after coordinate stabilization')
-            handleSummitClick(summit, latlng)
-          }, 300)
-          return
-        }
-      } catch (error) {
-        debugLog.event('Error in summit click safety measures:', error)
-      }
-    }
-    
-    try {
-      // レガシー実装と同じ検索API使用: /sota/summits/search?lat=xxx&lon=xxx&dist=200
-      const searchUrl = `https://sotaapp2.sotalive.net/api/v2/sota/summits/search?lat=${summit.latitude}&lon=${summit.longitude}&dist=200`
-      debugLog.api('Fetching summit details from:', searchUrl)
-      
-      const response = await fetch(searchUrl)
-      const searchResults = await response.json()
-      
-      if (searchResults && searchResults.length > 0) {
-        // 最も近いサミット（通常は最初の結果）を使用
-        const detailedSummit = searchResults[0]
-        debugLog.api('Found detailed summit data:', detailedSummit)
-        
-        // レガシー形式のサミットデータにマップ
-        const enrichedSummit = {
-          ...summit,
-          summitCode: detailedSummit.summitCode,
-          summitName: detailedSummit.summitName,
-          summitNameJ: detailedSummit.summitNameJ,
-          latitude: detailedSummit.latitude,
-          longitude: detailedSummit.longitude,
-          altM: detailedSummit.altM,
-          points: detailedSummit.points,
-          bonusPoints: detailedSummit.bonusPoints,
-          maidenhead: detailedSummit.maidenhead,
-          cityJ: detailedSummit.cityJ,
-          activationCount: detailedSummit.activationCount,
-          activationDate: detailedSummit.activationDate,
-          activationCall: detailedSummit.activationCall
-        }
-        
-        // レガシー実装と同じ：サミット詳細 + リバースジオコーディング
-        try {
-          const geocodingResult = await reverseGeocode(detailedSummit.latitude, detailedSummit.longitude, true)
-          setGeocodingInfo(geocodingResult)
-          debugLog.event('handleSummitClick: Geocoding completed for summit')
-        } catch (error) {
-          console.error('handleSummitClick: Geocoding error:', error)
-          setGeocodingInfo({ errors: 'ERROR' })
-        }
-        
-        // 前のポップアップをクリア（2重ポップアップ防止）
-        setPopupInfo(null)
-        setTimeout(() => {
-          setPopupInfo({
-            position: { lat: summit.latitude, lng: summit.longitude },
-            summit: enrichedSummit,
-            park: undefined, // 明示的にpark情報を除外
-            isGPS: false
-          })
-          debugLog.event('handleSummitClick: Detailed summit popup set')
-        }, 10)
-      } else {
-        // API結果が無い場合は基本データを使用
-        // 前のポップアップをクリア（2重ポップアップ防止）
-        setPopupInfo(null)
-        setTimeout(() => {
-          setPopupInfo({
-            position: { lat: summit.latitude, lng: summit.longitude },
-            summit,
-            park: undefined,
-            isGPS: false
-          })
-        }, 10)
-        debugLog.event('handleSummitClick: Fallback to basic summit data')
-      }
-    } catch (error) {
-      console.error('handleSummitClick: Error fetching detailed summit info:', error)
-      // エラー時は基本データを使用
-      setPopupInfo({
-        position: { lat: summit.latitude, lng: summit.longitude },
-        summit,
-        park: undefined,
-        isGPS: false
-      })
-      debugLog.event('handleSummitClick: Error fallback to basic summit data')
-    }
-  }, [setPopupInfo, mapFullyInitialized, reverseGeocode])
-
-  const handleParkClick = async (park: Park, latlng: [number, number]) => {
-    debugLog.event('handleParkClick called for park:', park.potaCode || park.wwffCode, 'at', park.latitude, park.longitude)
-    debugLog.event('handleParkClick: map initialization status:', mapFullyInitialized)
-    
-    // 地図初期化未完了時の安全対策
-    if (!mapFullyInitialized && mapRef.current) {
-      debugLog.event('Park click during map initialization, applying safety measures')
-      try {
-        mapRef.current.invalidateSize({ pan: false, debounceMoveend: true })
-        
-        // 座標変換テスト
-        const testPoint = mapRef.current.latLngToContainerPoint([latlng[0], latlng[1]])
-        debugLog.event('Park coordinate conversion test:', testPoint)
-        
-        // 異常な座標変換結果の場合は処理を遅延
-        if (!testPoint || testPoint.x <= 0 || testPoint.y <= 0 || 
-            testPoint.x > 10000 || testPoint.y > 10000) {
-          debugLog.event('Abnormal park coordinate conversion, delaying popup')
-          
-          // 300ms後に再試行
-          setTimeout(() => {
-            debugLog.event('Retrying park click after coordinate stabilization')
-            handleParkClick(park, latlng)
-          }, 300)
-          return
-        }
-      } catch (error) {
-        debugLog.event('Error in park click safety measures:', error)
-      }
-    }
-    
-    try {
-      const referenceCode = park.potaCode || park.wwffCode
-      if (referenceCode) {
-        debugLog.api('Fetching park details for:', referenceCode)
-        const detailsResponse = await APIService.searchReferenceDetails(referenceCode)
-        
-        if (detailsResponse?.candidates && detailsResponse.candidates.length > 0) {
-          const detailedPark = detailsResponse.candidates[0]
-          // Merge the basic park data with detailed API response
-          const enrichedPark = {
-            ...park,
-            ...detailedPark
-          }
-          debugLog.api('Enriched park details:', enrichedPark)
-          
-          // 前のポップアップをクリア（2重ポップアップ防止）
-          setPopupInfo(null)
-          setTimeout(() => {
-            setPopupInfo({
-              position: { lat: latlng[0], lng: latlng[1] },
-              park: enrichedPark,
-              summit: undefined, // 明示的にsummit情報を除外
-              isGPS: false
-            })
-          }, 10)
-        } else {
-          // Fallback to basic park data if API fails
-          debugLog.api('No detailed data found, using basic park info')
-          // 前のポップアップをクリア（2重ポップアップ防止）
-          setPopupInfo(null)
-          setTimeout(() => {
-            setPopupInfo({
-              position: { lat: latlng[0], lng: latlng[1] },
-              park,
-              summit: undefined, // 明示的にsummit情報を除外
-              isGPS: false
-            })
-          }, 10)
-        }
-      } else {
-        // No reference code available, use basic data
-        setPopupInfo({
-          position: { lat: latlng[0], lng: latlng[1] },
-          park
-        })
-      }
-    } catch (error) {
-      debugLog.api('Failed to fetch park details:', error)
-      // Fallback to basic park data if API fails
-      setPopupInfo({
-        position: { lat: latlng[0], lng: latlng[1] },
-        park
-      })
-    }
-  }
-
-  const handleQTHClick = (position: LatLng) => {
-    debugLog.event('handleQTHClick called at:', position.lat, position.lng)
-    debugLog.event('handleQTHClick: map initialization status:', mapFullyInitialized)
-    
-    // 地図初期化未完了時の安全対策
-    if (!mapFullyInitialized && mapRef.current) {
-      debugLog.event('QTH click during map initialization, applying safety measures')
-      try {
-        mapRef.current.invalidateSize({ pan: false, debounceMoveend: true })
-        
-        // 座標変換テスト
-        const testPoint = mapRef.current.latLngToContainerPoint([position.lat, position.lng])
-        debugLog.event('QTH coordinate conversion test:', testPoint)
-        
-        // 異常な座標変換結果の場合は処理を遅延
-        if (!testPoint || testPoint.x <= 0 || testPoint.y <= 0 || 
-            testPoint.x > 10000 || testPoint.y > 10000) {
-          debugLog.event('Abnormal QTH coordinate conversion, delaying popup')
-          
-          // 200ms後に再試行
-          setTimeout(() => {
-            debugLog.event('Retrying QTH click after coordinate stabilization')
-            handleQTHClick(position)
-          }, 200)
-          return
-        }
-      } catch (error) {
-        debugLog.event('Error in QTH click safety measures:', error)
-      }
-    }
-    
-    // 前のポップアップをクリア（2重ポップアップ防止）
-    setPopupInfo(null)
-    
-    // 地図初期化完了時は通常処理、未完了時は少し長めの遅延
-    const delay = mapFullyInitialized ? 10 : 50
-    setTimeout(() => {
-      setPopupInfo({
-        position,
-        summit: undefined, // 明示的にsummit情報を除外
-        park: undefined, // 明示的にpark情報を除外
-        isGPS: true
-      })
-      debugLog.event(`QTH popup set after ${delay}ms delay (initialized: ${mapFullyInitialized})`)
-    }, delay)
-  }
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <Box sx={{ height: '100%', width: '100%', position: 'relative' }}>
@@ -649,8 +237,17 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         ref={mapRef}
+        className="react-leaflet-map"
+        whenReady={() => {
+          // MapContainer準備完了後にdata-testidを追加
+          if (mapRef.current) {
+            const container = mapRef.current.getContainer()
+            container.setAttribute('data-testid', 'leaflet-map')
+            debugLog.leafletMap('MapContainer ready: data-testid attribute added')
+          }
+        }}
       >
-        <MapEvents />
+        <MapEvents mapRef={mapRef} />
         <MapDataLoader />
         
         <LayersControl position="topright">
@@ -688,25 +285,23 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
         {/* APRS tracks */}
         <APRSLayer />
 
-        {/* Summit markers */}
-        {preferences.sota_ref && summits.map((summit, index) => (
+        {/* Summit markers - 安定したキーで不要な再マウントを防止 */}
+        {preferences.sota_ref && summits.map((summit) => (
           <SummitMarker
-            key={`summit-${summit.summitCode}-${index}`}
+            key={`summit-${summit.summitCode}`}
             summit={summit}
             zoom={zoom}
             activationCount={summit.activationCount}
-            onMarkerClick={handleSummitClick}
           />
         ))}
 
-        {/* Park markers */}
-        {(preferences.pota_ref || preferences.jaff_ref) && parks.map((park, index) => (
+        {/* Park markers - 安定したキーで不要な再マウントを防止 */}
+        {(preferences.pota_ref || preferences.jaff_ref) && parks.map((park) => (
           <ParkMarker
-            key={`park-${park.potaCode || park.wwffCode}-${index}`}
+            key={`park-${park.potaCode || park.wwffCode}`}
             park={park}
             showActivatedOnly={preferences.show_potaactlog}
             isPermanentTooltip={preferences.popup_permanent}
-            onMarkerClick={handleParkClick}
           />
         ))}
 
@@ -714,7 +309,6 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
         {currentLocation && (
           <QTHMarker
             position={currentLocation}
-            onMarkerClick={handleQTHClick}
             onPositionChange={(newPos) => {
               // TODO: Update current location in store
               console.log('QTH marker moved to:', newPos)
@@ -724,14 +318,17 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ selectedAlert, sidePanelVisible
 
         {/* Info popup */}
         {popupInfo && (
-          // マーカークリック時は即座に表示、地図クリック時はgeocodingInfo取得後に表示
-          (popupInfo.summit || popupInfo.park || popupInfo.isGPS || geocodingInfo) && (
+          // Show popup when we have summit/park data OR when geocoding info is available for map clicks
+          (popupInfo.summit || popupInfo.park || popupInfo.isGPS || 
+           (!popupInfo.summit && !popupInfo.park && !popupInfo.isGPS && geocodingInfo && !geocodingInfo?.errors)) && (
             <InfoPopup
+              key={`popup-${popupInfo.position.lat}-${popupInfo.position.lng}-${popupInfo.summit?.summitCode || popupInfo.park?.potaCode || 'map'}`}
               position={popupInfo.position}
               summit={popupInfo.summit}
               park={popupInfo.park}
               geocodingInfo={geocodingInfo}
               isGPS={popupInfo.isGPS}
+              onClose={handlePopupClose}
             />
           )
         )}
