@@ -1165,12 +1165,12 @@
 									if (res['wardCode'] != null) {
 										area['century'] = 'JCC ' + res['wardCode'];
 										mesg = 'JCC' + res['jccCode'] + ' 区番号:' + res['wardCode'] + '<br>' +
-											res['prefecture'] + res['jccText'] + res['municipality'] + '<br>GL:' + res['maidenhead'] +
+											res['prefecture'] + res['municipality'] + '<br>GL:' + res['maidenhead'] +
 											pos + '<br> 標高:' + altitude;
 									}
 									else {
 										area['century'] = 'JCC ' + res['jccCode']
-										mesg = 'JCC' + res['jccCode'] + '<br>' + res['prefecture'] + res['jccText'] + res['municipality'] +
+										mesg = 'JCC' + res['jccCode'] + '<br>' + res['prefecture'] + res['municipality'] +
 											'<br>GL:' + res['maidenhead'] + pos + '<br> 標高:' + altitude;
 									}
 								}
