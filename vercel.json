@@ -105,8 +105,8 @@
             "destination": "/logconv/:match*"
         },
         {
-            "source": "/(.*)",
-            "destination": "/404.html"
+            "source": "/:match*",
+            "destination": "/myact/:match*"
         }
     ],
     "headers": [
