@@ -24,7 +24,7 @@ import urllib.request
 import urllib.error
 
 JSON_PATH = "public/common/json/jaffpota-annotated-v22.json"
-DEFAULT_API = "https://sotaapp2.fly.dev"
+DEFAULT_API = "https://sotaapp2.sotalive.net"
 
 
 def query_park(api_url, code):

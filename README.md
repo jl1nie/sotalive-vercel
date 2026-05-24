@@ -21,7 +21,7 @@
 #### 実行方法
 
 ```bash
-# 本番DBに対して実行（デフォルト: https://sotaapp2.fly.dev）
+# 本番DBに対して実行（デフォルト: https://sotaapp2.sotalive.net）
 uv run patch_jaff.py
 
 # ローカルサーバーに対して実行（開発・動作確認）
@@ -65,7 +65,7 @@ git push
 #### DB更新を先に済ませること
 
 JSONパッチの前にDBを正しい状態にしておく。
-管理画面（[sotaapp2 admin](https://sotaapp2.fly.dev/admin)）で：
+管理画面（[sotaapp2 admin](https://sotaapp2.sotalive.net/admin)）で：
 - 廃止公園: `parkInactive` をオン
 - 新公園: `wwffCode`（JAFFコード）を設定
 - 公園名 (`parkNameJ`) を確認
