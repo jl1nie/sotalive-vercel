@@ -27,19 +27,27 @@ JSON_PATH = "public/common/json/jaffpota-annotated-v22.json"
 DEFAULT_API = "https://sotaapp2.sotalive.net"
 
 
+_cache = {}
+
+
 def query_park(api_url, code):
-    """パークコードでAPIを照合。見つからなければNone。"""
+    """パークコードでAPIを照合。見つからなければNone。結果をキャッシュ。"""
+    if code in _cache:
+        return _cache[code]
     url = f"{api_url}/api/v2/pota/parks/{urllib.parse.quote(code)}"
     try:
         with urllib.request.urlopen(url, timeout=10) as r:
-            return json.loads(r.read())
+            result = json.loads(r.read())
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            return None
-        raise
+            result = None
+        else:
+            raise
     except Exception as e:
         print(f"  [warn] API error for {code}: {e}", file=sys.stderr)
-        return None
+        result = None
+    _cache[code] = result
+    return result
 
 
 def query_park_combo(api_url, pota_code, jaff_code):
