@@ -42,6 +42,19 @@ def query_park(api_url, code):
         return None
 
 
+def query_park_combo(api_url, pota_code, jaff_code):
+    """POTA+JAFF複合キーで照合。POTAで見つかりJAFFも一致すればそれを返す。
+    JAFFが不一致の場合はJAFFコードでも検索し、POTAが一致するレコードを優先する。"""
+    park = query_park(api_url, pota_code)
+    if park and (not jaff_code or park.get("wwffCode", "") == jaff_code):
+        return park
+    if jaff_code:
+        park2 = query_park(api_url, jaff_code)
+        if park2 and normalize_pota(park2.get("potaCode", "")) == pota_code:
+            return park2
+    return park
+
+
 def normalize_pota(pota):
     """JA-XXXX → JP-XXXX"""
     if pota.startswith("JA-"):
@@ -78,7 +91,7 @@ def main():
             continue
 
         new_pota = normalize_pota(old_pota)
-        park = query_park(args.api, new_pota)
+        park = query_park_combo(args.api, new_pota, old_jaff)
 
         # 問題なし: アクティブでPOTA/JAFF/NAMEが一致
         if (
