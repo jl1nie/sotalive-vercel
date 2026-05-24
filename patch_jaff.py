@@ -87,8 +87,11 @@ def main():
     print(f"API: {args.api}\n")
 
     changes = []  # (geom, new_props)
+    total = len(geometries)
+    queried = 0
+    unique_codes = set()
 
-    for geom in geometries:
+    for i, geom in enumerate(geometries, 1):
         props = geom["properties"]
         uid = props.get("UID", "?")
         old_pota = props.get("POTA", "")
@@ -99,6 +102,11 @@ def main():
             continue
 
         new_pota = normalize_pota(old_pota)
+        is_new = new_pota not in _cache
+        if is_new:
+            unique_codes.add(new_pota)
+            queried += 1
+        print(f"\r[{i}/{total}] API:{queried}件照会済 ", end="", flush=True)
         park = query_park_combo(args.api, new_pota, old_jaff)
 
         # 問題なし: DBに存在してアクティブ
