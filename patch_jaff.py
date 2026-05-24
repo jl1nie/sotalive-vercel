@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.8"
+# dependencies = []
+# ///
 """
 JAFF/POTA TopoJSON patcher
 
 JSONの各エントリをAPIで照合し、無効・未登録のものを対話形式で修正する。
 
 Usage:
-  python3 patch_jaff.py [--api URL] [--dry-run]
+  uv run patch_jaff.py [--api URL] [--dry-run]
 
 Examples:
-  python3 patch_jaff.py
-  python3 patch_jaff.py --api http://localhost:8080
-  python3 patch_jaff.py --dry-run
+  uv run patch_jaff.py
+  uv run patch_jaff.py --api http://localhost:8080
+  uv run patch_jaff.py --dry-run
 """
 
 import json
