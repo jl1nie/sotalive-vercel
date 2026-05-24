@@ -93,30 +93,11 @@ def main():
         new_pota = normalize_pota(old_pota)
         park = query_park_combo(args.api, new_pota, old_jaff)
 
-        # 問題なし: アクティブでPOTA/JAFF/NAMEが一致
-        if (
-            park is not None
-            and not park.get("parkInactive", False)
-            and old_pota == park.get("potaCode", new_pota)
-            and old_jaff == park.get("wwffCode", old_jaff)
-            and old_name == park.get("parkNameJ", old_name)
-        ):
+        # 問題なし: DBに存在してアクティブ
+        if park is not None and not park.get("parkInactive", False):
             continue
 
-        # プレフィックス正規化のみ(JA-→JP-)で他は一致
-        if (
-            park is not None
-            and not park.get("parkInactive", False)
-            and old_pota != new_pota
-            and old_pota.replace("JA-", "JP-") == park.get("potaCode", "")
-            and old_jaff == park.get("wwffCode", old_jaff)
-            and old_name == park.get("parkNameJ", old_name)
-        ):
-            print(f"UID {uid:6s}: prefix fix {old_pota} → {new_pota}")
-            changes.append((props, {"POTA": new_pota, "JAFF": old_jaff, "NAME": old_name}))
-            continue
-
-        # 要確認
+        # 要確認: DBに存在しないか非表示
         print(f"\n{'─'*60}")
         print(f"UID {uid}  現在: POTA={old_pota}  JAFF={old_jaff}")
         print(f"  NAME={old_name}")
@@ -125,16 +106,6 @@ def main():
             print(f"  → DBに {new_pota} が存在しない")
         elif park.get("parkInactive"):
             print(f"  → {new_pota} は非表示 (parkInactive)")
-            succ = park.get("successorPotaCode", "")
-            if succ:
-                print(f"     successorPotaCode = {succ}")
-        else:
-            db_jaff = park.get("wwffCode", "")
-            db_name = park.get("parkNameJ", "")
-            if old_jaff != db_jaff:
-                print(f"  → JAFF不一致: JSON={old_jaff}  DB={db_jaff}")
-            if old_name != db_name:
-                print(f"  → NAME不一致: JSON={old_name}  DB={db_name}")
 
         print()
         print("  新しいPOTAコードを入力 (Enterでスキップ、qで終了):")
