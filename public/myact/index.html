@@ -299,7 +299,7 @@
 									onclick="clickPrefs()">
 								<label class="custom-control-label" for="jaff_ref">JAFF</label>
 							</div>
-							<div class="custom-control custom-checkbox" id="check-display_area" style="display:none">
+							<div class="custom-control custom-checkbox">
 								<input class="custom-control-input" type="checkbox" value="" id="display_area"
 									onclick="clickPrefs()">
 								<label class="custom-control-label" for="display_area">自然公園の領域を表示(平成27年以前)</label>
@@ -623,14 +623,11 @@
 
 		if (location.host != 'mypilgrim.sotalive.net') {
 			enable_experimental = false;
-			prefs['display_area'] = false;
 			document.getElementById('check-pilgrim').style.display = 'none';
-			document.getElementById('check-display_area').style.display = 'none';
 		}
 		else {
 			enable_experimental = true;
 			document.getElementById('check-pilgrim').style.display = 'block';
-			document.getElementById('check-display_area').style.display = 'block';
 		}
 
 		var tolerance;
