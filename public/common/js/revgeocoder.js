@@ -14,7 +14,7 @@ var enable_gsi_elevation = true;
 // 座標を自動変換するのではなくクリップボードにコピーしてサイトを開くだけにする。
 // (マップコードの変換アルゴリズムはDENSOの非公開技術で、サービスへの組み込みには
 // 別途ライセンスが必要なため)
-function open_mapcode_search(event, lat, lng) {
+function mapcode_open_search(event, lat, lng) {
 	// Safariはユーザー操作ハンドラ内で非同期API(clipboard.writeText等)を先に呼ぶと、
 	// 直後のwindow.open()をユーザー操作起因と認識せずポップアップブロックすることがあるため、
 	// window.open()を最初に(同期的に)呼ぶ。
@@ -22,59 +22,62 @@ function open_mapcode_search(event, lat, lng) {
 
 	const coord = `${lat},${lng}`;
 	const anchorRect = event && event.currentTarget ? event.currentTarget.getBoundingClientRect() : null;
+
 	if (navigator.clipboard && navigator.clipboard.writeText) {
 		navigator.clipboard.writeText(coord)
-			.then(() => show_copy_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect))
-			.catch(() => { });
+			.then(() => mapcode_show_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect))
+			.catch(() => mapcode_show_toast(`コピーに失敗しました。検索欄に「${coord}」を入力してください`, anchorRect));
+	} else {
+		// クリップボードAPI非対応ブラウザ(非HTTPS等)では座標をそのまま案内する
+		mapcode_show_toast(`このブラウザは自動コピーに対応していません。検索欄に「${coord}」を入力してください`, anchorRect, 8000);
 	}
 }
 
-function show_copy_toast(message, anchorRect, duration = 4000) {
-	let toast = document.getElementById('copy-toast');
+function mapcode_show_toast(message, anchorRect, duration = 4000) {
+	let toast = document.getElementById('mapcode-toast');
 	if (!toast) {
 		toast = document.createElement('div');
-		toast.id = 'copy-toast';
+		toast.id = 'mapcode-toast';
 		toast.style.cssText = 'position:fixed;background:rgba(0,0,0,.85);color:#fff;padding:8px 12px;' +
 			'border-radius:6px;font-size:13px;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.3);' +
 			'z-index:9999;opacity:0;transition:opacity .3s;max-width:240px;text-align:center;pointer-events:none;';
 		document.body.appendChild(toast);
 	}
 	toast.textContent = message;
+	clearTimeout(toast._hideTimer);
 
 	const margin = 8;
-	if (anchorRect) {
-		toast.style.bottom = 'auto';
-		toast.style.transform = 'none';
-		toast.style.top = (anchorRect.bottom + margin) + 'px';
-		toast.style.left = anchorRect.left + 'px';
-	} else {
+	if (!anchorRect) {
+		toast.style.transform = 'translateX(-50%)';
+		toast.style.left = '50%';
 		toast.style.top = 'auto';
 		toast.style.bottom = '24px';
-		toast.style.left = '50%';
-		toast.style.transform = 'translateX(-50%)';
+		toast.style.opacity = '1';
+		toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, duration);
+		return;
 	}
 
-	toast.style.opacity = '1';
+	// 位置確定前にちらつかせないよう、画面外で不透明度0のまま計測してから一度に表示する
+	toast.style.transform = 'none';
+	toast.style.opacity = '0';
+	toast.style.left = '-9999px';
+	toast.style.top = '-9999px';
 
-	if (anchorRect) {
-		requestAnimationFrame(() => {
-			const tRect = toast.getBoundingClientRect();
-			let left = anchorRect.left + anchorRect.width / 2 - tRect.width / 2;
-			if (left + tRect.width > window.innerWidth - margin) {
-				left = window.innerWidth - margin - tRect.width;
-			}
-			if (left < margin) {
-				left = margin;
-			}
-			toast.style.left = left + 'px';
+	requestAnimationFrame(() => {
+		const tRect = toast.getBoundingClientRect();
+		let left = anchorRect.left + anchorRect.width / 2 - tRect.width / 2;
+		left = Math.min(Math.max(left, margin), window.innerWidth - margin - tRect.width);
 
-			if (anchorRect.bottom + margin + tRect.height > window.innerHeight - margin) {
-				toast.style.top = (anchorRect.top - margin - tRect.height) + 'px';
-			}
-		});
-	}
+		let top = anchorRect.bottom + margin;
+		if (top + tRect.height > window.innerHeight - margin) {
+			top = anchorRect.top - margin - tRect.height;
+		}
 
-	clearTimeout(toast._hideTimer);
+		toast.style.left = left + 'px';
+		toast.style.top = top + 'px';
+		toast.style.opacity = '1';
+	});
+
 	toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, duration);
 }
 

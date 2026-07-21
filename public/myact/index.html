@@ -1181,7 +1181,7 @@
 									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>';
 
 								if (showMapcode)
-									weather += '<br><a href="#" onclick="open_mapcode_search(event, ' +
+									weather += '<br><a href="#" onclick="mapcode_open_search(event, ' +
 										latlng.lat + ',' + latlng.lng + '); return false;"><img src="img/mc_long.jpg" height=14px></a>';
 
 								if ('areacode' in res && res['areacode'])
