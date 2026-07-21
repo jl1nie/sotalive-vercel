@@ -14,12 +14,14 @@ var enable_gsi_elevation = true;
 // 座標を自動変換するのではなくクリップボードにコピーしてサイトを開くだけにする。
 // (マップコードの変換アルゴリズムはDENSOの非公開技術で、サービスへの組み込みには
 // 別途ライセンスが必要なため)
-function mapcode_open_search(event, lat, lng) {
-	// Safariはユーザー操作ハンドラ内で非同期API(clipboard.writeText等)を先に呼ぶと、
-	// 直後のwindow.open()をユーザー操作起因と認識せずポップアップブロックすることがあるため、
-	// window.open()を最初に(同期的に)呼ぶ。
-	window.open('https://japanmapcode.com/en', '_blank');
-
+//
+// タブを開く処理は window.open() を使わず、リンク要素自体の
+// href="https://japanmapcode.com/en" target="_blank" によるネイティブ遷移に任せる。
+// Safariは script からの window.open() をバックグラウンドタブとして開くことがあり、
+// (ユーザーには「反応がない」ように見える)、通常の <a target="_blank"> クリックだけは
+// フォアグラウンドで開かれるため。この関数は preventDefault せず、
+// クリップボードコピー+トースト表示のみを副作用として行う。
+function mapcode_copy_coords(event, lat, lng) {
 	const coord = `${lat},${lng}`;
 	const anchorRect = event && event.currentTarget ? event.currentTarget.getBoundingClientRect() : null;
 
