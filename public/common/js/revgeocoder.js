@@ -25,13 +25,39 @@ function mapcode_copy_coords(event, lat, lng) {
 	const coord = `${lat},${lng}`;
 	const anchorRect = event && event.currentTarget ? event.currentTarget.getBoundingClientRect() : null;
 
-	if (navigator.clipboard && navigator.clipboard.writeText) {
+	// この後 target="_blank" のネイティブ遷移が発生し、モバイル(特にiOS Safari)では
+	// 新規タブが前面で開いて元のドキュメントが即座にフォーカスを失う。
+	// navigator.clipboard.writeText() は非同期APIのため、遷移がPromiseの解決より先に
+	// 起きるとフォーカス喪失により書き込みが失敗する(PCでは遷移が相対的に遅いため顕在化しにくい)。
+	// execCommand('copy') はイベントハンドラ内で同期的に完了するため、遷移前に確実にコピーできる。
+	if (mapcode_copy_sync(coord)) {
+		mapcode_show_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect);
+	} else if (navigator.clipboard && navigator.clipboard.writeText) {
 		navigator.clipboard.writeText(coord)
 			.then(() => mapcode_show_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect))
 			.catch(() => mapcode_show_toast(`コピーに失敗しました。検索欄に「${coord}」を入力してください`, anchorRect));
 	} else {
 		// クリップボードAPI非対応ブラウザ(非HTTPS等)では座標をそのまま案内する
 		mapcode_show_toast(`このブラウザは自動コピーに対応していません。検索欄に「${coord}」を入力してください`, anchorRect, 8000);
+	}
+}
+
+function mapcode_copy_sync(text) {
+	try {
+		const textarea = document.createElement('textarea');
+		textarea.value = text;
+		textarea.style.position = 'fixed';
+		textarea.style.top = '0';
+		textarea.style.left = '-9999px';
+		document.body.appendChild(textarea);
+		textarea.focus();
+		textarea.select();
+		textarea.setSelectionRange(0, text.length); // iOS Safari対策
+		const ok = document.execCommand('copy');
+		document.body.removeChild(textarea);
+		return ok;
+	} catch (e) {
+		return false;
 	}
 }
 
