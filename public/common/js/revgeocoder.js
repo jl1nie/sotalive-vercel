@@ -15,6 +15,11 @@ var enable_gsi_elevation = true;
 // (マップコードの変換アルゴリズムはDENSOの非公開技術で、サービスへの組み込みには
 // 別途ライセンスが必要なため)
 function open_mapcode_search(event, lat, lng) {
+	// Safariはユーザー操作ハンドラ内で非同期API(clipboard.writeText等)を先に呼ぶと、
+	// 直後のwindow.open()をユーザー操作起因と認識せずポップアップブロックすることがあるため、
+	// window.open()を最初に(同期的に)呼ぶ。
+	window.open('https://japanmapcode.com/en', '_blank');
+
 	const coord = `${lat},${lng}`;
 	const anchorRect = event && event.currentTarget ? event.currentTarget.getBoundingClientRect() : null;
 	if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -22,7 +27,6 @@ function open_mapcode_search(event, lat, lng) {
 			.then(() => show_copy_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect))
 			.catch(() => { });
 	}
-	window.open('https://japanmapcode.com/en', '_blank');
 }
 
 function show_copy_toast(message, anchorRect, duration = 4000) {
