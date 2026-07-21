@@ -1181,8 +1181,8 @@
 									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>';
 
 								if (showMapcode)
-									weather += '<br><a href="https://japanmapcode.com/en" target="_blank" onclick="mapcode_copy_coords(event, ' +
-										latlng.lat + ',' + latlng.lng + ');"><img src="img/mc_long.jpg" height=14px></a>';
+									weather += '<div style="text-align:center"><a href="https://japanmapcode.com/en" target="_blank" onclick="mapcode_copy_coords(event, ' +
+										latlng.lat + ',' + latlng.lng + ');"><img src="img/mc_long.jpg" height=14px></a></div>';
 
 								if ('areacode' in res && res['areacode'])
 									area['areacode'] = res['areacode'][0];
