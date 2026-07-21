@@ -2,8 +2,7 @@ const endpoint = {
 	'revgeocode': 'https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress',
 	'revyahoo': 'https://www.sotalive.net/api/reverse-geocoder/LonLatToAddressMapCode',
 	'elevation': 'https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php',
-	'muni': 'https://sotaapp2.sotalive.net/api/v2/locator/jcc-jcg',
-	'mapcode': 'https://japanmapcode.com/mapcode'
+	'muni': 'https://sotaapp2.sotalive.net/api/v2/locator/jcc-jcg'
 };
 
 const cache_rev = new Map();
@@ -11,23 +10,68 @@ const cache_rev = new Map();
 var use_yahoo_revgeocode = false;
 var enable_gsi_elevation = true;
 
-async function get_mapcode(lat, lng) {
-	const data = { lng: lng, lat: lat };
-	const url = endpoint['mapcode'];
-	try {
-		const response = await fetch(url,
-			{
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(data)
-			});
-		if (!response.ok) { throw new Error('Network response was not ok'); }
-		const result = await response.json();
-		return result.mapcode;
-	} catch (error) {
-		console.error('Error:', error);
-		return null;
+// japanmapcode.com はJSON APIの提供を終了し通常のWebページになったため、
+// 座標を自動変換するのではなくクリップボードにコピーしてサイトを開くだけにする。
+// (マップコードの変換アルゴリズムはDENSOの非公開技術で、サービスへの組み込みには
+// 別途ライセンスが必要なため)
+function open_mapcode_search(event, lat, lng) {
+	const coord = `${lat},${lng}`;
+	const anchorRect = event && event.currentTarget ? event.currentTarget.getBoundingClientRect() : null;
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		navigator.clipboard.writeText(coord)
+			.then(() => show_copy_toast('座標をコピーしました。検索欄に貼り付けて (Ctrl+V / ⌘V) Enterしてください', anchorRect))
+			.catch(() => { });
 	}
+	window.open('https://japanmapcode.com/en', '_blank');
+}
+
+function show_copy_toast(message, anchorRect, duration = 4000) {
+	let toast = document.getElementById('copy-toast');
+	if (!toast) {
+		toast = document.createElement('div');
+		toast.id = 'copy-toast';
+		toast.style.cssText = 'position:fixed;background:rgba(0,0,0,.85);color:#fff;padding:8px 12px;' +
+			'border-radius:6px;font-size:13px;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.3);' +
+			'z-index:9999;opacity:0;transition:opacity .3s;max-width:240px;text-align:center;pointer-events:none;';
+		document.body.appendChild(toast);
+	}
+	toast.textContent = message;
+
+	const margin = 8;
+	if (anchorRect) {
+		toast.style.bottom = 'auto';
+		toast.style.transform = 'none';
+		toast.style.top = (anchorRect.bottom + margin) + 'px';
+		toast.style.left = anchorRect.left + 'px';
+	} else {
+		toast.style.top = 'auto';
+		toast.style.bottom = '24px';
+		toast.style.left = '50%';
+		toast.style.transform = 'translateX(-50%)';
+	}
+
+	toast.style.opacity = '1';
+
+	if (anchorRect) {
+		requestAnimationFrame(() => {
+			const tRect = toast.getBoundingClientRect();
+			let left = anchorRect.left + anchorRect.width / 2 - tRect.width / 2;
+			if (left + tRect.width > window.innerWidth - margin) {
+				left = window.innerWidth - margin - tRect.width;
+			}
+			if (left < margin) {
+				left = margin;
+			}
+			toast.style.left = left + 'px';
+
+			if (anchorRect.bottom + margin + tRect.height > window.innerHeight - margin) {
+				toast.style.top = (anchorRect.top - margin - tRect.height) + 'px';
+			}
+		});
+	}
+
+	clearTimeout(toast._hideTimer);
+	toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, duration);
 }
 
 async function local_reverse_geocoder(lat, lng, elev) {

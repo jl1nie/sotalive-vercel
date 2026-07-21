@@ -1176,12 +1176,13 @@
 								}
 							}
 
-							function cont(mapcode) {
+							function cont(showMapcode) {
 								weather = '&nbsp&nbsp<a href="' + windyuri +
 									'" target="_blank"><img src="svg/sun.svg"><img src="svg/cloud.svg"><img src="svg/rain.svg"></a>';
 
-								if (mapcode)
-									weather += '<br><img src="img/mc_long.jpg" height=14px> &nbsp' + mapcode;
+								if (showMapcode)
+									weather += '<br><a href="#" onclick="open_mapcode_search(event, ' +
+										latlng.lat + ',' + latlng.lng + '); return false;"><img src="img/mc_long.jpg" height=14px></a>';
 
 								if ('areacode' in res && res['areacode'])
 									area['areacode'] = res['areacode'][0];
@@ -1212,14 +1213,7 @@
 								last_mesg = mesg;
 							}
 
-							if (prefs['display_mapcode']) {
-								get_mapcode(latlng.lat, latlng.lng)
-									.then(code => {
-										cont(code)
-									})
-							}
-							else
-								cont('')
+							cont(prefs['display_mapcode'])
 						});
 				});
 		}
