@@ -236,6 +236,12 @@
 					</div>
 					<small><span id="clock_time2" style="cursor: default;"></span></small>
 				</div>
+				<div id="spot-notice" class="alert alert-warning small m-0 py-1 px-3 rounded-0" role="status" style="display:none">
+					SOTAのスポットは現在取得できません(提供元の旧APIが廃止されたため)。POTAのスポットのみ表示します。
+				</div>
+				<div id="spot-empty" class="text-center text-muted small py-2" role="status" style="display:none">
+					現在、表示できるスポットはありません。
+				</div>
 				<div id="chart-container" class="modal-body">
 					<canvas id="myChart"></canvas>
 				</div>
@@ -583,6 +589,8 @@
 		};
 
 		var sotaapp2 = 'https://sotaapp2.sotalive.net/api/v2'
+		// SOTAスポットは提供元の旧APIが廃止されたため停止中。再開したら true にする(スポット一覧の案内が消える)
+		var SOTA_SPOTS_AVAILABLE = false;
 		var show_summit_marker = [];
 
 		async function fetchAPI(endpoint, method, data) {
@@ -2176,6 +2184,10 @@
 					}
 				}
 			}
+			document.getElementById('spot-notice').style.display =
+				(!SOTA_SPOTS_AVAILABLE && target_prog.includes('SOTA')) ? '' : 'none';
+			document.getElementById('spot-empty').style.display = datasets.length == 0 ? '' : 'none';
+
 			let ctx = document.getElementById('myChart').getContext('2d');
 			let cnt = document.getElementById('chart-container');
 

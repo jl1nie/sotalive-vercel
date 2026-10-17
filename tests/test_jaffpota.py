@@ -90,6 +90,13 @@ class TestJaffpotaV23(unittest.TestCase):
         self.assertRegex(html, r"function loadAreas\(\) \{\s*getGeoData\('json/jaffpota-annotated-v\d+\.json'\)")
         self.assertEqual(html.count("loadAreas()"), 2)  # 定義 + 初回呼び出しのみ(再呼び出しによる重複追加を防ぐ)
 
+    def test_spot_notice_present(self):
+        # SOTA スポット停止中の案内と、空状態の表示(再開時は SOTA_SPOTS_AVAILABLE を true にする)
+        html = rel.HTML.read_text(encoding="utf-8")
+        self.assertIn('id="spot-notice"', html)
+        self.assertIn('id="spot-empty"', html)
+        self.assertRegex(html, r"var SOTA_SPOTS_AVAILABLE = (true|false);")
+
     def test_removed_pota_absent(self):
         present = {g["properties"]["POTA"] for g in self.geoms}
         self.assertFalse(present & REMOVED)
