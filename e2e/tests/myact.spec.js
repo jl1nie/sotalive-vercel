@@ -12,8 +12,8 @@ const BASELINE_API = [
 // prefs のキーのうち、同名の要素 ID が無いもの(スライダー等は別 ID を使う。基準)
 const BASELINE_PREFS_WITHOUT_ELEMENT = ['spot_period', 'zoom_threshold'];
 
-async function open(page, { cookies = [] } = {}) {
-  const errors = [], apis = [], areaFetches = [];
+async function open(page, { cookies = [], spots = [] } = {}) {
+  const errors = [], apis = [], areaFetches = [], spotQueries = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   await page.route(TRACKERS, r => r.abort());
@@ -31,6 +31,9 @@ async function open(page, { cookies = [] } = {}) {
       body = { tracks: [] };
     } else if (ep === '/search') {
       body = { sota: [], pota: [], temples: [] };
+    } else if (ep === '/activation/spots') {
+      spotQueries.push(u.searchParams);
+      body = spots;
     }
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
@@ -38,7 +41,7 @@ async function open(page, { cookies = [] } = {}) {
   if (cookies.length) await page.context().addCookies(cookies);
   await page.goto('/');
   await page.waitForFunction(() => window.map && window.geojson && Object.keys(geojson._layers).length > 0, null, { timeout: 30000 });
-  return { errors, apis, areaFetches };
+  return { errors, apis, areaFetches, spotQueries };
 }
 
 // 経緯度を画面座標にして、区域をクリックする
@@ -53,7 +56,8 @@ async function clickAt(page, lat, lng, button = 'left', zoom = 10) {
   await page.mouse.click(pt.x, pt.y, { button });
 }
 
-const popupText = page => page.locator('.leaflet-popup-content').first().innerText({ timeout: 10000 });
+// ポップアップは開いた直後は仮の内容で、API の応答後に内容が入る。自動で待って確認する
+const popup = page => page.locator('.leaflet-popup-content').first();
 
 test.describe('起動と区域', () => {
   test('M-3/C-1/C-3 エラーなく起動し、区域が1回だけ読まれる', async ({ page }) => {
@@ -93,17 +97,15 @@ test.describe('区域のクリック(M-4〜M-7)', () => {
     test(`${name} → ${pota}`, async ({ page }) => {
       await open(page);
       await clickAt(page, lat, lng);
-      const t = await popupText(page);
-      expect(t).toContain(pota);
-      expect(t).toContain(label);
+      await expect(popup(page)).toContainText(pota);
+      await expect(popup(page)).toContainText(label);
     });
   }
 
   test('M-5 右クリックで JAFF(PID,UID) が出る', async ({ page }) => {
     await open(page);
     await clickAt(page, 30.3359, 130.5042, 'right');
-    const t = await popupText(page);
-    expect(t).toMatch(/JAFF-0090\(030,\d+\)/);
+    await expect(popup(page)).toContainText(/JAFF-0090\(030,\d+\)/);
   });
 });
 
@@ -148,5 +150,63 @@ test.describe('設定(R-1〜R-7)', () => {
     await open(page);
     const d = await page.evaluate(() => ({ sota: prefs.sota_ref, pota: prefs.pota_ref, jaff: prefs.jaff_ref, aprs: prefs.aprs_track, perm: prefs.popup_permanent, mapcode: prefs.display_mapcode }));
     expect(d).toEqual({ sota: true, pota: true, jaff: true, aprs: true, perm: true, mapcode: false });
+  });
+});
+
+// スポット一覧(SOTA スポットは提供元の旧 API 廃止で停止中。再開時は SOTA_SPOTS_AVAILABLE を true にして、このテストの案内の期待値を更新する)
+const recent = () => new Date(Date.now() - 10 * 60 * 1000).toISOString().slice(0, 19);
+const potaSpots = () => [{ key: 'JP-0001', values: [{ program: 'POTA', reference: 'JP-0001', activator: 'JA1ABC', frequency: '7.030', mode: 'CW', comment: '', spotTime: recent(), qsos: null }] }];
+
+async function openSpots(page, opts) {
+  const ctx = await open(page, opts);
+  await page.locator('button[data-target="#spots-data"]').click();
+  await page.waitForFunction(() => window.chart);
+  await page.waitForTimeout(500);
+  return ctx;
+}
+
+test.describe('スポット一覧(S-1〜S-5)', () => {
+  test('S-1 スポットが無いとき、SOTA停止の案内と空状態が出る', async ({ page }) => {
+    const { errors, spotQueries } = await openSpots(page);
+    await expect(page.locator('#spot-notice')).toBeVisible();
+    await expect(page.locator('#spot-empty')).toBeVisible();
+    expect(await page.evaluate(() => chart.data.datasets.length)).toBe(0);
+    expect(errors).toEqual([]);
+    // 日本のスポットを 6 時間分、参照ごとに取得する
+    expect(spotQueries[0].get('pat_ref')).toBe('^(JA|JP-)');
+    expect(spotQueries[0].get('hours_ago')).toBe('6');
+    expect(spotQueries[0].has('by_ref')).toBe(true);
+  });
+
+  test('S-2 POTA スポットがあるとき、チャートに描画され空状態は消える', async ({ page }) => {
+    await openSpots(page, { spots: potaSpots() });
+    await expect(page.locator('#spot-empty')).toBeHidden();
+    await expect(page.locator('#spot-notice')).toBeVisible(); // SOTA/POTA 表示中は SOTA 停止の案内が残る
+    expect(await page.evaluate(() => chart.data.datasets.map(d => d.label))).toEqual(['JP-0001']);
+  });
+
+  test('S-3 POTA のみの表示では SOTA 停止の案内が出ない', async ({ page }) => {
+    await openSpots(page, { spots: potaSpots() });
+    await page.evaluate(() => onProgChange(2)); // POTA
+    await page.waitForTimeout(800);
+    await expect(page.locator('#spot-notice')).toBeHidden();
+    await page.evaluate(() => onProgChange(1)); // SOTA
+    await page.waitForTimeout(800);
+    await expect(page.locator('#spot-notice')).toBeVisible();
+  });
+
+  test('S-4 期間の切替が API の hours_ago に反映される', async ({ page }) => {
+    const { spotQueries } = await openSpots(page);
+    await page.evaluate(() => onPeriodChange(12));
+    await page.waitForTimeout(800);
+    expect(spotQueries.at(-1).get('hours_ago')).toBe('12');
+  });
+
+  test('S-5 By Callsign の切替が API のクエリに反映される', async ({ page }) => {
+    const { spotQueries } = await openSpots(page);
+    await page.locator('label[for="by_call"]').click();
+    await page.waitForTimeout(800);
+    expect(spotQueries.at(-1).has('by_call')).toBe(true);
+    expect(spotQueries.at(-1).has('by_ref')).toBe(false);
   });
 });
