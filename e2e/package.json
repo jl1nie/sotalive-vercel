@@ -1,0 +1,7 @@
+{
+  "name": "myact-e2e",
+  "private": true,
+  "description": "MyACT (public/myact) の画面確認。Vercel のビルド対象外",
+  "scripts": { "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "1.57.0" }
+}
