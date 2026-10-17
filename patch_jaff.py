@@ -23,7 +23,7 @@ import argparse
 import urllib.request
 import urllib.error
 
-JSON_PATH = "public/common/json/jaffpota-annotated-v22.json"
+JSON_PATH = "public/common/json/jaffpota-annotated-v23.json"
 DEFAULT_API = "https://sotaapp2.sotalive.net"
 
 
