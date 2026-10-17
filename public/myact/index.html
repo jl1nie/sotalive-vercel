@@ -300,11 +300,6 @@
 								<label class="custom-control-label" for="jaff_ref">JAFF</label>
 							</div>
 							<div class="custom-control custom-checkbox">
-								<input class="custom-control-input" type="checkbox" value="" id="display_area"
-									onclick="clickPrefs()">
-								<label class="custom-control-label" for="display_area">自然公園の領域を表示(平成27年以前)</label>
-							</div>
-							<div class="custom-control custom-checkbox">
 								<input class="custom-control-input" type="checkbox" value="" id="aprs_track"
 									onclick="clickPrefs()">
 								<label class="custom-control-label" for="aprs_track">SOTA APRS</label>
@@ -558,7 +553,6 @@
 			'sota_ref': true,
 			'pota_ref': true,
 			'jaff_ref': true,
-			'display_area': false,
 			'aprs_track': true,
 			'pilgrim': false,
 			'show_potalog': false,
@@ -1321,7 +1315,6 @@
 			redrawMarkers();
 			refresh_spots();
 			refresh_aprs_track();
-			updateGeoJson();
 		}
 
 		readCookie(prefs);
@@ -1793,15 +1786,11 @@
 			return data;
 		}
 
-		function updateGeoJson() {
-			if (enable_experimental || prefs['display_area']) {
-				getGeoData('json/jaffpota-annotated-v23.json').then(data => geojson.addData(data));
-			} else {
-				geojson.clearLayers()
-			}
+		function loadAreas() {
+			getGeoData('json/jaffpota-annotated-v23.json').then(data => geojson.addData(data));
 		}
 
-		updateGeoJson();
+		loadAreas();
 
 		userChange = true;
 
