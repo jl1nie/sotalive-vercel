@@ -83,6 +83,13 @@ class TestJaffpotaV23(unittest.TestCase):
     def test_index_html_references_latest(self):
         self.assertEqual(rel.referenced_version(), {rel.latest_version()}, "index.html の参照が最新版とずれている")
 
+    def test_areas_always_loaded(self):
+        html = rel.HTML.read_text(encoding="utf-8")
+        # 区域表示は常時ON。設定項目・設定キー・条件分岐が残っていないこと
+        self.assertNotIn("display_area", html)
+        self.assertRegex(html, r"function loadAreas\(\) \{\s*getGeoData\('json/jaffpota-annotated-v\d+\.json'\)")
+        self.assertEqual(html.count("loadAreas()"), 2)  # 定義 + 初回呼び出しのみ(再呼び出しによる重複追加を防ぐ)
+
     def test_removed_pota_absent(self):
         present = {g["properties"]["POTA"] for g in self.geoms}
         self.assertFalse(present & REMOVED)
