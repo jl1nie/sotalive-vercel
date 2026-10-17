@@ -1,7 +1,9 @@
-"""jaffpota-annotated-v23.json の検証。標準ライブラリのみ。
+"""最新版 jaffpota-annotated-vN.json の検証。標準ライブラリのみ。
 
-    python -m unittest tests.test_jaffpota_v23 -v
-    JAFFPOTA_API=https://sotaapp2.sotalive.net python -m unittest tests.test_jaffpota_v23 -v   # DB照合も実行
+版に依存しない検査(書式・属性・UID・arc・index.html の参照・DB照合)と、v23 固有の検査(件数・新規公園)に分かれる。
+
+    python -m unittest tests.test_jaffpota -v
+    JAFFPOTA_API=https://sotaapp2.sotalive.net python -m unittest tests.test_jaffpota -v   # DB照合も実行
 """
 import json
 import os
@@ -12,7 +14,13 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-PATH = Path(__file__).resolve().parent.parent / "public/common/json/jaffpota-annotated-v23.json"
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import jaffpota_release as rel  # noqa: E402
+
+PATH = rel.latest_path()
+V23 = rel.latest_version() == 23
 PROPS = ["JAFF", "NAME", "PID", "POTA", "UID"]
 NEW_PARKS = {
     "JP-0030": ("JAFF-0090", "030", "屋久島国立公園"),
@@ -42,6 +50,7 @@ class TestJaffpotaV23(unittest.TestCase):
         dumped = json.dumps(self.d, ensure_ascii=False, separators=(",", ":")) + "\n"
         self.assertEqual(dumped, self.raw)  # 空白なし・非ASCIIエスケープなし
 
+    @unittest.skipUnless(V23, "v23 固有の検査")
     def test_counts(self):
         self.assertEqual(len(self.geoms), 1439)
         self.assertEqual({g["type"] for g in self.geoms}, {"Polygon", "MultiPolygon"})
@@ -61,6 +70,7 @@ class TestJaffpotaV23(unittest.TestCase):
     def test_uid_sequential(self):
         self.assertEqual([g["properties"]["UID"] for g in self.geoms], [str(i) for i in range(1, len(self.geoms) + 1)])
 
+    @unittest.skipUnless(V23, "v23 固有の検査")
     def test_new_national_parks(self):
         for pota, (jaff, pid, name) in NEW_PARKS.items():
             gs = [g["properties"] for g in self.geoms if g["properties"]["POTA"] == pota]
@@ -69,6 +79,9 @@ class TestJaffpotaV23(unittest.TestCase):
                 self.assertEqual((p["JAFF"], p["PID"], p["NAME"]), (jaff, pid, name))
         # 霧島錦江湾と屋久島は別の公園
         self.assertTrue(any(g["properties"]["POTA"] == "JP-0029" for g in self.geoms))
+
+    def test_index_html_references_latest(self):
+        self.assertEqual(rel.referenced_version(), {rel.latest_version()}, "index.html の参照が最新版とずれている")
 
     def test_removed_pota_absent(self):
         present = {g["properties"]["POTA"] for g in self.geoms}

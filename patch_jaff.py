@@ -23,7 +23,9 @@ import argparse
 import urllib.request
 import urllib.error
 
-JSON_PATH = "public/common/json/jaffpota-annotated-v23.json"
+from jaffpota_release import latest_path
+
+JSON_PATH = str(latest_path())  # 最新版を自動選択
 DEFAULT_API = "https://sotaapp2.sotalive.net"
 
 

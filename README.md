@@ -9,6 +9,18 @@
 `jaffpota-annotated-v23.json` は地図上のポリゴンに POTA/JAFF コードと公園名を紐付けるファイル。
 **DBが唯一の正**であり、JSONはDBの内容に合わせて手動でパッチする運用。
 
+### 区域データの版更新
+
+ファイル名の版(`-vN`)がキャッシュ無効化を兼ねる。最新版はディスク上のファイルから自動で決まり、`patch_jaff.py` とテストも最新版を使う。
+
+```bash
+python jaffpota_release.py                 # 最新版と index.html の参照を確認
+python jaffpota_release.py bump new.json   # 次の版として配置し、index.html の参照を更新してテストを実行
+JAFFPOTA_API=https://sotaapp2.sotalive.net python -m unittest discover -s tests -t .   # DB照合も含めて検証
+```
+
+旧版はロールバック用に残す。
+
 ### patch_jaff.py — 対話式パッチツール
 
 公園統合・廃止など、JSONとDBの間で乖離が生じたときに使う。
