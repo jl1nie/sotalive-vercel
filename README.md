@@ -6,8 +6,20 @@
 
 ## JAFF/POTAアノテーション管理
 
-`jaffpota-annotated-v22.json` は地図上のポリゴンに POTA/JAFF コードと公園名を紐付けるファイル。
+`jaffpota-annotated-v23.json` は地図上のポリゴンに POTA/JAFF コードと公園名を紐付けるファイル。
 **DBが唯一の正**であり、JSONはDBの内容に合わせて手動でパッチする運用。
+
+### 区域データの版更新
+
+ファイル名の版(`-vN`)がキャッシュ無効化を兼ねる。最新版はディスク上のファイルから自動で決まり、`patch_jaff.py` とテストも最新版を使う。
+
+```bash
+python jaffpota_release.py                 # 最新版と index.html の参照を確認
+python jaffpota_release.py bump new.json   # 次の版として配置し、index.html の参照を更新してテストを実行
+JAFFPOTA_API=https://sotaapp2.sotalive.net python -m unittest discover -s tests -t .   # DB照合も含めて検証
+```
+
+旧版はロールバック用に残す。
 
 ### patch_jaff.py — 対話式パッチツール
 
@@ -16,7 +28,7 @@
 #### 前提条件
 
 - [uv](https://docs.astral.sh/uv/) がインストール済み（`pip install uv` または `curl -LsSf https://astral.sh/uv/install.sh | sh`）
-- このリポジトリのルートにいること（`jaffpota-annotated-v22.json` への相対パスを参照するため）
+- このリポジトリのルートにいること（`jaffpota-annotated-v23.json` への相対パスを参照するため）
 
 #### 実行方法
 
@@ -33,7 +45,7 @@ uv run patch_jaff.py --dry-run
 
 #### 動作フロー
 
-1. `public/common/json/jaffpota-annotated-v22.json` を読み込む
+1. `public/common/json/jaffpota-annotated-v23.json` を読み込む
 2. 全エントリのPOTAコードを `GET /api/v2/pota/parks/{code}` で照合
    - `JA-XXXX` → `JP-XXXX` の正規化が必要なエントリは自動修正（プレフィックス変換のみ）
 3. 以下のいずれかに該当するエントリで対話プロンプトを表示：
@@ -55,8 +67,8 @@ uv run patch_jaff.py --dry-run
 #### JSONを更新した後
 
 ```bash
-git diff public/common/json/jaffpota-annotated-v22.json  # 差分確認
-git add public/common/json/jaffpota-annotated-v22.json
+git diff public/common/json/jaffpota-annotated-v23.json  # 差分確認
+git add public/common/json/jaffpota-annotated-v23.json
 git commit -m "fix: JAFFアノテーション更新 YYYY-MM-DD"
 git push
 # → Vercel が自動デプロイ
